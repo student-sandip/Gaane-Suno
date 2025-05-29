@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">GaaneSuno</string>
+    <string name="back_button_description" />
+    <string name="remove_ads_icon_description" />
+    <string name="customer_support" />
+    <string name="rating" />
+    <string name="share" />
+    <string name="privacy_policy" />
+    <string name="terms_and_conditions" />
+    <string name="version_check" />
+    <string name="bug_fix" />
+</resources>
