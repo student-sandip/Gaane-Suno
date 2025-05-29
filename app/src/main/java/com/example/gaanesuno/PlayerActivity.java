@@ -181,10 +181,30 @@ public class PlayerActivity extends AppCompatActivity {
             btnShuffle.setImageResource(isShuffle ? R.drawable.ic_shuffle_on : R.drawable.ic_shuffle_off);
         });
 
+        final int[] repeatMode = {0};
+
         btnRepeat.setOnClickListener(v -> {
-            isRepeat = !isRepeat;
-            btnRepeat.setImageResource(isRepeat ? R.drawable.ic_repeat_on : R.drawable.ic_repeat_off);
+            repeatMode[0] = (repeatMode[0] + 1) % 3;
+
+            switch (repeatMode[0]) {
+                case 0:
+                    isRepeat = false;
+                    btnRepeat.setImageResource(R.drawable.ic_repeat_off);
+                    Toast.makeText(this, "Repeat Off", Toast.LENGTH_SHORT).show();
+                    break;
+                case 1:
+                    isRepeat = true;
+                    btnRepeat.setImageResource(R.drawable.ic_repeat_on);
+                    Toast.makeText(this, "Repeat All", Toast.LENGTH_SHORT).show();
+                    break;
+                case 2:
+                    isRepeat = true;
+                    btnRepeat.setImageResource(R.drawable.ic_repeat_one);
+                    Toast.makeText(this, "Repeat One", Toast.LENGTH_SHORT).show();
+                    break;
+            }
         });
+
 
         btnTimer.setOnClickListener(v -> showTimerDialog());
 

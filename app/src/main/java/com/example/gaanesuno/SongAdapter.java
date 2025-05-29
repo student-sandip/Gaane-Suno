@@ -88,7 +88,7 @@ public class SongAdapter extends BaseAdapter {
 
         // ✅ Highlight currently playing song
         if (position == currentlyPlayingPosition) {
-            convertView.setBackgroundColor(Color.parseColor("#800080")); // highlighted background
+            convertView.setBackgroundColor(Color.parseColor("#c71585")); // highlighted background
         } else {
             convertView.setBackgroundColor(Color.TRANSPARENT); // normal background
         }

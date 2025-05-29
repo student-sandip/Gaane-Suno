@@ -153,7 +153,7 @@ public class MusicService extends Service {
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("GaanaSuno")
+                .setContentTitle("GaaneSuno")
                 .setContentText(playbackState)
                 .setSmallIcon(R.drawable.ic_music_note)
                 .setContentIntent(pendingIntent)
@@ -167,10 +167,10 @@ public class MusicService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
-                    "GaanaSuno Playback",
+                    "GaaneSuno Playback",
                     NotificationManager.IMPORTANCE_LOW
             );
-            channel.setDescription("Playback controls for GaanaSuno");
+            channel.setDescription("Playback controls for GaaneSuno");
 
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
