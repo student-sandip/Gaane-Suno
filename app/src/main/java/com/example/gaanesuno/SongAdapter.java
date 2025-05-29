@@ -13,7 +13,6 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 public class SongAdapter extends BaseAdapter {
-
     private int currentlyPlayingPosition = -1;
 
     public void setCurrentlyPlayingPosition(int position) {
@@ -33,16 +32,19 @@ public class SongAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
+
         return songs.size();
     }
 
     @Override
     public Object getItem(int position) {
+
         return songs.get(position);
     }
 
     @Override
     public long getItemId(int position) {
+
         return position;
     }
 
@@ -70,11 +72,9 @@ public class SongAdapter extends BaseAdapter {
         Song song = songs.get(position);
         holder.title.setText(song.getTitle());
         holder.artist.setText(song.getArtist());
-        holder.title.setSelected(true); // Required for marquee to scroll
+        holder.title.setSelected(true);
         holder.artist.setSelected(true);
 
-
-        // Set album art (content:// URI or fallback)
         String albumArtUri = song.getAlbumArtUri();
         if (albumArtUri != null && !albumArtUri.isEmpty()) {
             Uri uri = Uri.parse(albumArtUri);
@@ -86,11 +86,10 @@ public class SongAdapter extends BaseAdapter {
             holder.thumbnail.setImageResource(R.drawable.ic_album_art);
         }
 
-        // ✅ Highlight currently playing song
         if (position == currentlyPlayingPosition) {
-            convertView.setBackgroundColor(Color.parseColor("#c71585")); // highlighted background
+            convertView.setBackgroundColor(Color.parseColor("#FF4500"));
         } else {
-            convertView.setBackgroundColor(Color.TRANSPARENT); // normal background
+            convertView.setBackgroundColor(Color.TRANSPARENT);
         }
 
         return convertView;

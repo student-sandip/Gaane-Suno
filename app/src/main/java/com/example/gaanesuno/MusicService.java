@@ -187,7 +187,7 @@ public class MusicService extends Service {
 
     @Override
     public void onTaskRemoved(Intent rootIntent) {
-        stopSelf(); // Stop the service when the app is closed from recent apps
+        stopSelf();
         super.onTaskRemoved(rootIntent);
     }
 }
