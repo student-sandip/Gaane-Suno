@@ -138,7 +138,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:layout_marginTop="220dp"
-                android:text="© 2025 GaanaSuno Music Player. All rights reserved."
+                android:text="© 2025 GaanaSuno. All rights reserved."
                 android:textColor="#888888"
                 android:textSize="14sp" />
         </LinearLayout>
