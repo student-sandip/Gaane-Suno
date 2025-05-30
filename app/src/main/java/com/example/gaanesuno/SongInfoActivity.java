@@ -1,13 +1,17 @@
 package com.example.gaanesuno;
 
 import android.media.MediaMetadataRetriever;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.example.gaanesuno.R;
 import com.example.gaanesuno.Song;
@@ -83,6 +87,14 @@ public class SongInfoActivity extends AppCompatActivity {
 
         // Back button logic
         backButton.setOnClickListener(v -> onBackPressed());
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Window window = getWindow();
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(ContextCompat.getColor(this, R.color.orange)); // or your desired color
+        }
     }
 
     private String formatDuration(long durationMillis) {
