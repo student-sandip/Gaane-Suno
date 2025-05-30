@@ -15,19 +15,19 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingTop="50dp"
-            android:paddingBottom="20dp"
+            android:paddingTop="29dp"
+            android:paddingBottom="15dp"
             android:background="#E65100">
+
 
             <ImageView
                 android:id="@+id/backButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:contentDescription="Back"
-                android:padding="4dp"
                 android:layout_marginStart="12dp"
+                android:contentDescription="Back"
+                android:padding="14dp"
                 android:src="@drawable/ic_back" />
-
 
             <TextView
                 android:layout_width="wrap_content"

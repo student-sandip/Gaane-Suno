@@ -31,7 +31,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         findViewById(R.id.settings_customer_support).setOnClickListener(v -> {
             Intent emailIntent = new Intent(Intent.ACTION_SENDTO);
-            emailIntent.setData(Uri.parse("mailto:support@gaanasuno.com"));
+            emailIntent.setData(Uri.parse("mailto:support@gaanesuno.com"));
             emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Support Needed");
             startActivity(Intent.createChooser(emailIntent, "Contact Support"));
         });
@@ -48,7 +48,7 @@ public class SettingsActivity extends AppCompatActivity {
         findViewById(R.id.settings_share).setOnClickListener(v -> {
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
             shareIntent.setType("text/plain");
-            shareIntent.putExtra(Intent.EXTRA_TEXT, "Check out GaanaSuno music player: https://play.google.com/store/apps/details?id=" + getPackageName());
+            shareIntent.putExtra(Intent.EXTRA_TEXT, "Check out GaaneSuno music player: https://play.google.com/store/apps/details?id=" + getPackageName());
             startActivity(Intent.createChooser(shareIntent, "Share via"));
         });
 
@@ -62,7 +62,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         findViewById(R.id.settings_bug_fix).setOnClickListener(v -> {
             Intent bugIntent = new Intent(Intent.ACTION_SENDTO);
-            bugIntent.setData(Uri.parse("mailto:support@gaanasuno.com"));
+            bugIntent.setData(Uri.parse("mailto:support@gaanesuno.com"));
             bugIntent.putExtra(Intent.EXTRA_SUBJECT, "Bug Report");
             startActivity(Intent.createChooser(bugIntent, "Report Bug"));
         });

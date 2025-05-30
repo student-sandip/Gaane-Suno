@@ -19,8 +19,8 @@
         android:baselineAligned="false"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="19dp"
+        android:paddingHorizontal="15dp"
+        android:paddingVertical="10dp"
         android:weightSum="1">
 
         <TextView
