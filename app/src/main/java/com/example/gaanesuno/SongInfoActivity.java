@@ -37,8 +37,6 @@ public class SongInfoActivity extends AppCompatActivity {
             return;
         }
 
-
-        // Initialize Views
         backButton = findViewById(R.id.backButton);
         infoTitle = findViewById(R.id.infoTitle);
         infoArtist = findViewById(R.id.infoArtist);
@@ -85,7 +83,6 @@ public class SongInfoActivity extends AppCompatActivity {
             finish();
         }
 
-        // Back button logic
         backButton.setOnClickListener(v -> onBackPressed());
 
 
@@ -93,7 +90,7 @@ public class SongInfoActivity extends AppCompatActivity {
             Window window = getWindow();
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(ContextCompat.getColor(this, R.color.orange)); // or your desired color
+            window.setStatusBarColor(ContextCompat.getColor(this, R.color.orange));
         }
     }
 

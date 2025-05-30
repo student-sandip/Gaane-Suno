@@ -92,7 +92,7 @@ public class SongAdapter extends BaseAdapter {
         }
 
         if (position == currentlyPlayingPosition) {
-            holder.title.setTextColor(Color.parseColor("#FF5722")); // Orange
+            holder.title.setTextColor(Color.parseColor("#FF5722"));
             holder.artist.setTextColor(Color.parseColor("#FF5722"));
 
             holder.title.setTypeface(null, Typeface.BOLD);

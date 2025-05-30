@@ -5,21 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 
-//public class NotificationActionReceiver extends BroadcastReceiver {
-//
-//    @Override
-//    public void onReceive(Context context, Intent intent) {
-//        String action = intent.getAction();
-//
-//        Intent serviceIntent = new Intent(context, MusicService.class);
-//        serviceIntent.setAction(action);
-//
-//        // Start the MusicService with the action (defined in MusicService)
-//        context.startService(serviceIntent);
-//    }
-//}
-
-
 public class NotificationActionReceiver extends BroadcastReceiver {
 
     @Override

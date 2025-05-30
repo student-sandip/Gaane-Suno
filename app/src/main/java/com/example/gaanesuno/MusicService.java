@@ -256,7 +256,6 @@ public class MusicService extends Service {
             }
         }
     }
-
     private void notifySongChanged() {
         Intent intent = new Intent("com.example.gaanesuno.SONG_CHANGED");
         intent.putExtra("position", MusicState.currentlyPlayingPosition);

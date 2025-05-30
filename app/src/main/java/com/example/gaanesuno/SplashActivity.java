@@ -35,8 +35,6 @@ public class SplashActivity extends AppCompatActivity {
         splashText.setCharacterDelay(60); // optional, delay in ms
         splashText.animateText("Welcome to Gaane Suno App");
 
-
-
         new Handler().postDelayed(() -> {
             Intent intent = new Intent(SplashActivity.this, MainActivity.class);
             startActivity(intent);

@@ -206,7 +206,7 @@ public class PlayerActivity extends AppCompatActivity {
             Window window = getWindow();
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(ContextCompat.getColor(this, R.color.black)); // or your desired color
+            window.setStatusBarColor(ContextCompat.getColor(this, R.color.black));
         }
     }
 
@@ -258,7 +258,6 @@ public class PlayerActivity extends AppCompatActivity {
         position = isShuffle ? new Random().nextInt(songs.size()) : (position + 1) % songs.size();
         playSong();
     }
-
     void playPreviousSong() {
         position = isShuffle ? new Random().nextInt(songs.size()) : (position - 1 + songs.size()) % songs.size();
         playSong();
@@ -291,8 +290,7 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private String formatTime(int milliseconds) {
-        return String.format("%02d:%02d",
-                TimeUnit.MILLISECONDS.toMinutes(milliseconds),
+        return String.format("%02d:%02d", TimeUnit.MILLISECONDS.toMinutes(milliseconds),
                 TimeUnit.MILLISECONDS.toSeconds(milliseconds) % 60);
     }
 
