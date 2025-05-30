@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Permissions -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
@@ -43,8 +44,12 @@
             android:name=".MainActivity"
             android:exported="true" />
 
-        <activity android:name=".PlayerActivity" />
+        <activity android:name=".PlayerActivity"
+            android:launchMode="standard" />
         <activity android:name=".SettingsActivity" />
+        <activity android:name=".SongInfoActivity" />
+        <receiver android:name=".NotificationActionReceiver" />
+
 
         <service
             android:name=".MusicService"

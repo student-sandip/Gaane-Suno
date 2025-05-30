@@ -55,11 +55,16 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
             intent.putExtra("songsList", (Serializable) songsList);
             intent.putExtra("position", pos);
-            intent.putExtra("resumePlayback", pos == currentlyPlayingPosition);
-            currentlyPlayingPosition = pos;
+            intent.putExtra("resumePlayback", pos == MusicState.currentlyPlayingPosition);
+
+            MusicState.songList = songsList;
+            MusicState.currentlyPlayingPosition = pos;
+
             adapter.setCurrentlyPlayingPosition(pos);
             adapter.notifyDataSetChanged();
+
             startActivityForResult(intent, PLAYER_ACTIVITY_REQUEST_CODE);
+
         });
 
         // Settings button click
@@ -69,6 +74,15 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
     }
+
+//    @Override
+//    public void onBackPressed() {
+//        Intent intent = new Intent(this, MainActivity.class);
+//        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+//        startActivity(intent);
+//        finish();
+//    }
+
 
     private boolean hasPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

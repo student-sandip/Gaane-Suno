@@ -13,4 +13,10 @@
         android:title="Settings"
         android:icon="@drawable/ic_settings"
         app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_info"
+        android:title="Info"
+        android:icon="@drawable/ic_info"
+        app:showAsAction="never" />
 </menu>

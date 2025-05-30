@@ -2,13 +2,18 @@ package com.example.gaanesuno;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 
@@ -87,10 +92,25 @@ public class SongAdapter extends BaseAdapter {
         }
 
         if (position == currentlyPlayingPosition) {
-            convertView.setBackgroundColor(Color.parseColor("#FF4500"));
+            holder.title.setTextColor(Color.parseColor("#FF5722")); // Orange
+            holder.artist.setTextColor(Color.parseColor("#FF5722"));
+
+            holder.title.setTypeface(null, Typeface.BOLD);
+            holder.artist.setTypeface(null, Typeface.BOLD);
+
+            holder.title.setPaintFlags(holder.title.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+            holder.artist.setPaintFlags(holder.artist.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
         } else {
-            convertView.setBackgroundColor(Color.TRANSPARENT);
+            holder.title.setTextColor(Color.WHITE);
+            holder.artist.setTextColor(Color.GRAY);
+
+            holder.title.setTypeface(null, Typeface.NORMAL);
+            holder.artist.setTypeface(null, Typeface.NORMAL);
+
+            holder.title.setPaintFlags(holder.title.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG));
+            holder.artist.setPaintFlags(holder.artist.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG));
         }
+
 
         return convertView;
     }

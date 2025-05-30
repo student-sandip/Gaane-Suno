@@ -25,5 +25,5 @@
         android:textColor="#FFFFFF"
         android:layout_below="@id/splashLogo"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="106dp" />
+        android:layout_marginTop="110dp" />
 </RelativeLayout>
