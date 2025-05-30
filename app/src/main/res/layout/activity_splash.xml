@@ -13,17 +13,17 @@
         android:src="@drawable/gaanesuno_logo"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
-        android:layout_marginBottom="30dp"
+        android:layout_marginBottom="1dp"
         app:shapeAppearanceOverlay="@style/CircleImageView" />
 
-    <TextView
+    <com.example.gaanesuno.TypeWriter
         android:id="@+id/splashText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Welcome to Gaane Suno"
-        android:textSize="18sp"
-        android:textColor="#FFFFFF"
         android:layout_below="@id/splashLogo"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="110dp" />
+        android:layout_marginTop="0dp"
+        android:textColor="#6B6969"
+        android:textSize="18sp" />
+
 </RelativeLayout>
