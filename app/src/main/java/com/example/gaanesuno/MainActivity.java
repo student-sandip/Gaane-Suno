@@ -45,9 +45,11 @@ public class MainActivity extends AppCompatActivity {
 
         songListView = findViewById(R.id.songListView);
         songsList = new ArrayList<>();
+        loadSongsInBackground();
+
 
         if (hasPermission()) {
-            loadSongs();
+            loadSongsInBackground();
         } else {
             requestPermission();
         }
@@ -113,45 +115,51 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void loadSongs() {
-        songsList = new ArrayList<>();
+    private void loadSongsInBackground() {
+        new Thread(() -> {
+            ArrayList<Song> loadedSongs = new ArrayList<>();
 
-        ContentResolver contentResolver = getContentResolver();
-        Uri songUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+            ContentResolver contentResolver = getContentResolver();
+            Uri songUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
 
-        Cursor cursor = contentResolver.query(songUri, null,
-                MediaStore.Audio.Media.IS_MUSIC + "!= 0", null,
-                MediaStore.Audio.Media.TITLE + " ASC");
+            Cursor cursor = contentResolver.query(songUri, null,
+                    MediaStore.Audio.Media.IS_MUSIC + "!= 0", null,
+                    MediaStore.Audio.Media.TITLE + " ASC");
 
-        if (cursor != null && cursor.moveToFirst()) {
-            int titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE);
-            int artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
-            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
-            int albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
-            int durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION);
+            if (cursor != null && cursor.moveToFirst()) {
+                int titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE);
+                int artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
+                int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
+                int albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
+                int durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION);
 
-            do {
-                String title = cursor.getString(titleColumn);
-                String artist = cursor.getString(artistColumn);
-                String path = cursor.getString(dataColumn);
-                long albumId = cursor.getLong(albumIdColumn);
-                long duration = cursor.getLong(durationColumn);
+                do {
+                    String title = cursor.getString(titleColumn);
+                    String artist = cursor.getString(artistColumn);
+                    String path = cursor.getString(dataColumn);
+                    long albumId = cursor.getLong(albumIdColumn);
+                    long duration = cursor.getLong(durationColumn);
 
-                Uri albumArtUri = Uri.parse("content://media/external/audio/albumart/" + albumId);
+                    Uri albumArtUri = Uri.parse("content://media/external/audio/albumart/" + albumId);
+                    loadedSongs.add(new Song(title, artist, path, albumArtUri.toString(), duration));
+                } while (cursor.moveToNext());
 
-                songsList.add(new Song(title, artist, path, albumArtUri.toString(), duration));
-            } while (cursor.moveToNext());
+                cursor.close();
+            }
 
-            cursor.close();
-        }
+            runOnUiThread(() -> {
+                songsList = loadedSongs;
 
-        if (songsList.isEmpty()) {
-            Toast.makeText(this, "No songs found on device", Toast.LENGTH_SHORT).show();
-        } else {
-            adapter = new SongAdapter(this, songsList);
-            songListView.setAdapter(adapter);
-        }
+                if (songsList.isEmpty()) {
+                    Toast.makeText(MainActivity.this, "No songs found on device", Toast.LENGTH_SHORT).show();
+                } else {
+                    adapter = new SongAdapter(MainActivity.this, songsList);
+                    songListView.setAdapter(adapter);
+                }
+            });
+        }).start();
     }
+
 
     @Override
     protected void onResume() {
@@ -170,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQUEST_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show();
-                loadSongs();
+                loadSongsInBackground();
             } else {
                 Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show();
             }

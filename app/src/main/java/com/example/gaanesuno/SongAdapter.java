@@ -15,6 +15,8 @@ import android.widget.TextView;
 
 import androidx.core.content.ContextCompat;
 
+import com.bumptech.glide.Glide;
+
 import java.util.ArrayList;
 
 public class SongAdapter extends BaseAdapter {
@@ -82,11 +84,11 @@ public class SongAdapter extends BaseAdapter {
 
         String albumArtUri = song.getAlbumArtUri();
         if (albumArtUri != null && !albumArtUri.isEmpty()) {
-            Uri uri = Uri.parse(albumArtUri);
-            holder.thumbnail.setImageURI(uri);
-            if (holder.thumbnail.getDrawable() == null) {
-                holder.thumbnail.setImageResource(R.drawable.ic_album_art);
-            }
+            Glide.with(context)
+                    .load(Uri.parse(albumArtUri))
+                    .placeholder(R.drawable.ic_album_art)
+                    .error(R.drawable.ic_album_art)
+                    .into(holder.thumbnail);
         } else {
             holder.thumbnail.setImageResource(R.drawable.ic_album_art);
         }
@@ -94,23 +96,18 @@ public class SongAdapter extends BaseAdapter {
         if (position == currentlyPlayingPosition) {
             holder.title.setTextColor(Color.parseColor("#FF5722"));
             holder.artist.setTextColor(Color.parseColor("#FF5722"));
-
             holder.title.setTypeface(null, Typeface.BOLD);
             holder.artist.setTypeface(null, Typeface.BOLD);
-
             holder.title.setPaintFlags(holder.title.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
             holder.artist.setPaintFlags(holder.artist.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
         } else {
             holder.title.setTextColor(Color.WHITE);
             holder.artist.setTextColor(Color.GRAY);
-
             holder.title.setTypeface(null, Typeface.NORMAL);
             holder.artist.setTypeface(null, Typeface.NORMAL);
-
             holder.title.setPaintFlags(holder.title.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG));
             holder.artist.setPaintFlags(holder.artist.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG));
         }
-
 
         return convertView;
     }

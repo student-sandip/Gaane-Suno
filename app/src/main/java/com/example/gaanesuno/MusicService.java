@@ -27,17 +27,16 @@ public class MusicService extends Service {
     public static final String ACTION_PREV = "com.example.gaanesuno.ACTION_PREV";
     public static final String ACTION_CLOSE = "com.example.gaanesuno.ACTION_CLOSE";
 
-    private MediaPlayer mediaPlayer;
-    private final IBinder binder = new MusicBinder();
-    private OnSongCompleteListener onSongCompleteListener;
-
     private static final int NOTIFICATION_ID = 101;
     private static final String CHANNEL_ID = "GaaneSuno_Channel";
 
+    private final IBinder binder = new MusicBinder();
+    private MediaPlayer mediaPlayer;
     private String currentPath = "";
     private boolean isPlaying = false;
-
     private Song currentSong;
+
+    private OnSongCompleteListener onSongCompleteListener;
 
     public class MusicBinder extends Binder {
         public MusicService getService() {
@@ -51,37 +50,50 @@ public class MusicService extends Service {
         return binder;
     }
 
-    public boolean isSameSong(String path) {
-        return currentPath.equals(path);
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null && intent.getAction() != null) {
+            switch (intent.getAction()) {
+                case ACTION_PREV:
+                    playPrevious();
+                    break;
+                case ACTION_PLAY_PAUSE:
+                    if (isPlaying()) pause(); else resume();
+                    break;
+                case ACTION_NEXT:
+                    playNext();
+                    break;
+                case ACTION_CLOSE:
+                    stop();
+                    break;
+            }
+        }
+        return START_STICKY;
     }
 
     public void playMedia(Song song) {
         if (song == null) return;
-        if (isSameSong(song.getPath()) && isPlaying()) {
-            return;
-        }
+        if (isSameSong(song.getPath()) && isPlaying()) return;
 
         stopMedia();
         try {
             mediaPlayer = new MediaPlayer();
             mediaPlayer.setAudioAttributes(new AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build());
 
             mediaPlayer.setDataSource(this, Uri.parse(song.getPath()));
             mediaPlayer.prepare();
             mediaPlayer.start();
+
             currentPath = song.getPath();
             currentSong = song;
             isPlaying = true;
 
             mediaPlayer.setOnCompletionListener(mp -> {
                 isPlaying = false;
-                if (onSongCompleteListener != null) {
-                    onSongCompleteListener.onComplete();
-                }
-                // Optionally auto-play next song here if you want.
+                if (onSongCompleteListener != null) onSongCompleteListener.onComplete();
             });
 
             showNotification(true);
@@ -115,6 +127,10 @@ public class MusicService extends Service {
         return mediaPlayer != null && mediaPlayer.isPlaying();
     }
 
+    public boolean isSameSong(String path) {
+        return currentPath.equals(path);
+    }
+
     public int getDuration() {
         return mediaPlayer != null ? mediaPlayer.getDuration() : 0;
     }
@@ -124,17 +140,13 @@ public class MusicService extends Service {
     }
 
     public void seekTo(int position) {
-        if (mediaPlayer != null) {
-            mediaPlayer.seekTo(position);
-        }
+        if (mediaPlayer != null) mediaPlayer.seekTo(position);
     }
 
     private void stopMedia() {
         if (mediaPlayer != null) {
             try {
-                if (mediaPlayer.isPlaying()) {
-                    mediaPlayer.stop();
-                }
+                if (mediaPlayer.isPlaying()) mediaPlayer.stop();
             } catch (IllegalStateException e) {
                 e.printStackTrace();
             }
@@ -158,67 +170,33 @@ public class MusicService extends Service {
         void onComplete();
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        stopMedia();
-        stopForeground(true);
+    private void playPrevious() {
+        if (MusicState.currentlyPlayingPosition > 0) {
+            MusicState.currentlyPlayingPosition--;
+            playMedia(MusicState.songList.get(MusicState.currentlyPlayingPosition));
+        }
     }
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null && intent.getAction() != null) {
-            switch (intent.getAction()) {
-                case ACTION_PREV:
-                    playPrevious();
-                    break;
-                case ACTION_PLAY_PAUSE:
-                    if (isPlaying()) {
-                        pause();
-                    } else {
-                        resume();
-                    }
-                    break;
-                case ACTION_NEXT:
-                    playNext();
-                    break;
-                case ACTION_CLOSE:
-                    stop();
-                    break;
-            }
+    private void playNext() {
+        if (MusicState.currentlyPlayingPosition < MusicState.songList.size() - 1) {
+            MusicState.currentlyPlayingPosition++;
+            playMedia(MusicState.songList.get(MusicState.currentlyPlayingPosition));
         }
-        return START_STICKY;
     }
 
     private void showNotification(boolean isPlaying) {
         createNotificationChannel();
 
-        Intent closeIntent = new Intent(this, MusicService.class);
-        closeIntent.setAction(ACTION_CLOSE);
-        PendingIntent closePending = PendingIntent.getService(this, 4, closeIntent,
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                new Intent(this, PlayerActivity.class)
+                        .putExtra("songsList", MusicState.songList)
+                        .putExtra("position", MusicState.currentlyPlayingPosition),
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        Intent intent = new Intent(this, PlayerActivity.class);
-        intent.putExtra("songsList", MusicState.songList);
-        intent.putExtra("position", MusicState.currentlyPlayingPosition);
-
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        Intent prevIntent = new Intent(this, MusicService.class);
-        prevIntent.setAction(ACTION_PREV);
-        PendingIntent prevPending = PendingIntent.getService(this, 1, prevIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        Intent playPauseIntent = new Intent(this, MusicService.class);
-        playPauseIntent.setAction(ACTION_PLAY_PAUSE);
-        PendingIntent playPausePending = PendingIntent.getService(this, 2, playPauseIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        Intent nextIntent = new Intent(this, MusicService.class);
-        nextIntent.setAction(ACTION_NEXT);
-        PendingIntent nextPending = PendingIntent.getService(this, 3, nextIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent prevPending = getServicePendingIntent(ACTION_PREV, 1);
+        PendingIntent playPausePending = getServicePendingIntent(ACTION_PLAY_PAUSE, 2);
+        PendingIntent nextPending = getServicePendingIntent(ACTION_NEXT, 3);
+        PendingIntent closePending = getServicePendingIntent(ACTION_CLOSE, 4);
 
         Bitmap albumArt = BitmapFactory.decodeResource(getResources(), R.drawable.ic_album_placeholder);
 
@@ -241,21 +219,23 @@ public class MusicService extends Service {
         startForeground(NOTIFICATION_ID, builder.build());
     }
 
+    private PendingIntent getServicePendingIntent(String action, int requestCode) {
+        Intent intent = new Intent(this, MusicService.class).setAction(action);
+        return PendingIntent.getService(this, requestCode, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "GaaneSuno Playback",
-                    NotificationManager.IMPORTANCE_LOW
-            );
+                    CHANNEL_ID, "GaaneSuno Playback", NotificationManager.IMPORTANCE_LOW);
             channel.setDescription("Playback controls for GaaneSuno");
 
             NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) {
-                manager.createNotificationChannel(channel);
-            }
+            if (manager != null) manager.createNotificationChannel(channel);
         }
     }
+
     private void notifySongChanged() {
         Intent intent = new Intent("com.example.gaanesuno.SONG_CHANGED");
         intent.putExtra("position", MusicState.currentlyPlayingPosition);
@@ -274,19 +254,10 @@ public class MusicService extends Service {
         super.onTaskRemoved(rootIntent);
     }
 
-    // Implement these methods to handle prev/next logic in your playlist
-    private void playPrevious() {
-        // Example:
-        if (MusicState.currentlyPlayingPosition > 0) {
-            MusicState.currentlyPlayingPosition--;
-            playMedia(MusicState.songList.get(MusicState.currentlyPlayingPosition));
-        }
-    }
-
-    private void playNext() {
-        if (MusicState.currentlyPlayingPosition < MusicState.songList.size() - 1) {
-            MusicState.currentlyPlayingPosition++;
-            playMedia(MusicState.songList.get(MusicState.currentlyPlayingPosition));
-        }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        stopMedia();
+        stopForeground(true);
     }
 }
