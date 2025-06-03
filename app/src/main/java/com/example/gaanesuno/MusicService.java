@@ -93,11 +93,15 @@ public class MusicService extends Service {
 
             mediaPlayer.setOnCompletionListener(mp -> {
                 isPlaying = false;
-                if (onSongCompleteListener != null) onSongCompleteListener.onComplete();
+                if (onSongCompleteListener != null) {
+                    onSongCompleteListener.onComplete();
+                }
+                // Auto play next if available
+                playNext(); // or notify completion only if you want manual next
             });
 
             showNotification(true);
-            notifySongChanged();
+            notifySongChanged();  // Broadcast song change to UI
 
         } catch (IOException e) {
             e.printStackTrace();

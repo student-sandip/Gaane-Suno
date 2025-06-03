@@ -1,8 +1,11 @@
 package com.example.gaanesuno;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
@@ -33,10 +36,19 @@ public class MainActivity extends AppCompatActivity {
 
     private ArrayList<Song> songsList;
     private ListView songListView;
-
-    public static int currentlyPlayingPosition = -1;
-
     private SongAdapter adapter;
+
+    private final BroadcastReceiver songChangedReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("com.example.gaanesuno.SONG_CHANGED".equals(intent.getAction())) {
+                if (adapter != null) {
+                    adapter.setCurrentlyPlayingPosition(MusicState.currentlyPlayingPosition);
+                    adapter.notifyDataSetChanged();
+                }
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,8 +57,6 @@ public class MainActivity extends AppCompatActivity {
 
         songListView = findViewById(R.id.songListView);
         songsList = new ArrayList<>();
-        loadSongsInBackground();
-
 
         if (hasPermission()) {
             loadSongsInBackground();
@@ -54,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
             requestPermission();
         }
 
-        // Launch PlayerActivity on item click
         songListView.setOnItemClickListener((parent, view, pos, id) -> {
             Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
             intent.putExtra("songsList", (Serializable) songsList);
@@ -68,10 +77,8 @@ public class MainActivity extends AppCompatActivity {
             adapter.notifyDataSetChanged();
 
             startActivityForResult(intent, PLAYER_ACTIVITY_REQUEST_CODE);
-
         });
 
-        // Settings button click
         ImageView settingsButton = findViewById(R.id.btnSettings);
         settingsButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
@@ -85,15 +92,6 @@ public class MainActivity extends AppCompatActivity {
             window.setStatusBarColor(ContextCompat.getColor(this, R.color.black));
         }
     }
-
-//    @Override
-//    public void onBackPressed() {
-//        Intent intent = new Intent(this, MainActivity.class);
-//        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-//        startActivity(intent);
-//        finish();
-//    }
-
 
     private boolean hasPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -154,19 +152,41 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "No songs found on device", Toast.LENGTH_SHORT).show();
                 } else {
                     adapter = new SongAdapter(MainActivity.this, songsList);
+                    adapter.setCurrentlyPlayingPosition(MusicState.currentlyPlayingPosition);
                     songListView.setAdapter(adapter);
                 }
             });
         }).start();
     }
 
-
     @Override
     protected void onResume() {
         super.onResume();
+        IntentFilter filter = new IntentFilter("com.example.gaanesuno.SONG_CHANGED");
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(songChangedReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                registerReceiver(songChangedReceiver, filter, Context.RECEIVER_EXPORTED);
+            }
+        }
+
         if (adapter != null) {
             adapter.setCurrentlyPlayingPosition(MusicState.currentlyPlayingPosition);
             adapter.notifyDataSetChanged();
+        }
+    }
+
+
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            unregisterReceiver(songChangedReceiver);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace(); // Prevent crash if receiver not registered
         }
     }
 
