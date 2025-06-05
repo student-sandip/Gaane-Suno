@@ -1,6 +1,7 @@
 package com.example.gaanesuno;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -38,13 +39,17 @@ public class MainActivity extends AppCompatActivity {
     private ListView songListView;
     private SongAdapter adapter;
 
-    private final BroadcastReceiver songChangedReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver songUpdateReceiver = new BroadcastReceiver() {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            if ("com.example.gaanesuno.SONG_CHANGED".equals(intent.getAction())) {
-                if (adapter != null) {
-                    adapter.setCurrentlyPlayingPosition(MusicState.currentlyPlayingPosition);
-                    adapter.notifyDataSetChanged();
+        public void onReceive(Context context, @NonNull Intent intent) {
+            if ("com.example.gaanesuno.UPDATE_SONG".equals(intent.getAction())) {
+                int newPos = intent.getIntExtra("position", -1);
+                if (newPos != -1) {
+                    MusicState.currentlyPlayingPosition = newPos;
+                    if (adapter != null) {
+                        adapter.setCurrentlyPlayingPosition(newPos);
+                        adapter.notifyDataSetChanged();
+                    }
                 }
             }
         }
@@ -159,17 +164,16 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     protected void onResume() {
         super.onResume();
-        IntentFilter filter = new IntentFilter("com.example.gaanesuno.SONG_CHANGED");
+        IntentFilter filter = new IntentFilter("com.example.gaanesuno.UPDATE_SONG");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(songChangedReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            registerReceiver(songUpdateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                registerReceiver(songChangedReceiver, filter, Context.RECEIVER_EXPORTED);
-            }
+            registerReceiver(songUpdateReceiver, filter);
         }
 
         if (adapter != null) {
@@ -178,15 +182,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-
     @Override
     protected void onPause() {
         super.onPause();
         try {
-            unregisterReceiver(songChangedReceiver);
+            unregisterReceiver(songUpdateReceiver);
         } catch (IllegalArgumentException e) {
-            e.printStackTrace(); // Prevent crash if receiver not registered
+            e.printStackTrace();
         }
     }
 

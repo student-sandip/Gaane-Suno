@@ -47,13 +47,17 @@
 
     <ListView
         android:id="@+id/songListView"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:divider="#444444"
         android:dividerHeight="1dp"
-        android:padding="8dp"
+        android:paddingStart="1dp"
+        android:paddingEnd="1dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
         android:scrollbars="vertical" />
+
 
     <TextView
         android:id="@+id/footer"

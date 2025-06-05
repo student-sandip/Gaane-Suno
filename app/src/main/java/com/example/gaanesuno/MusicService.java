@@ -97,7 +97,7 @@ public class MusicService extends Service {
                     onSongCompleteListener.onComplete();
                 }
                 // Auto play next if available
-                playNext(); // or notify completion only if you want manual next
+//                playNext(); // or notify completion only if you want manual next
             });
 
             showNotification(true);

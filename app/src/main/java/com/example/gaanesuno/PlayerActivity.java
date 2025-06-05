@@ -1,10 +1,13 @@
 package com.example.gaanesuno;
 
+import static com.example.gaanesuno.MusicState.songList;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.*;
 import android.content.pm.PackageManager;
+import android.database.ContentObserver;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.*;
@@ -40,6 +43,22 @@ public class PlayerActivity extends AppCompatActivity {
     private CountDownTimer sleepTimer;
     private AudioManager audioManager;
     private Song currentSong;
+    private VolumeObserver volumeObserver;
+
+    private class VolumeObserver extends ContentObserver {
+        VolumeObserver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            super.onChange(selfChange);
+            if (audioManager != null && volumeSeekBar != null) {
+                int currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                volumeSeekBar.setProgress(currentVol);
+            }
+        }
+    }
 
     private final BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context context, Intent intent) {
@@ -71,7 +90,6 @@ public class PlayerActivity extends AppCompatActivity {
 
         initViews();
 
-        // Notification receiver
         IntentFilter filter = new IntentFilter();
         filter.addAction("com.example.gaanesuno.ACTION_NEXT");
         filter.addAction("com.example.gaanesuno.ACTION_PREV");
@@ -80,7 +98,6 @@ public class PlayerActivity extends AppCompatActivity {
             registerReceiver(notificationReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         }
 
-        // POST_NOTIFICATION permission for Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                 ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                         != PackageManager.PERMISSION_GRANTED) {
@@ -88,7 +105,6 @@ public class PlayerActivity extends AppCompatActivity {
                     new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
         }
 
-        // Get song list and position
         songs = (ArrayList<Song>) getIntent().getSerializableExtra("songsList");
         position = getIntent().getIntExtra("position", 0);
         if (songs == null || songs.isEmpty()) {
@@ -97,7 +113,6 @@ public class PlayerActivity extends AppCompatActivity {
             return;
         }
 
-        // Storage permissions
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
                 !Environment.isExternalStorageManager()) {
             startActivity(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));
@@ -110,16 +125,19 @@ public class PlayerActivity extends AppCompatActivity {
             startActivity(intent);
         }
 
-        // Volume control
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         volumeSeekBar.setMax(maxVolume);
-        volumeSeekBar.setProgress(currentVolume);
+        volumeSeekBar.setProgress(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC));
+
+        volumeObserver = new VolumeObserver(new Handler());
+        getContentResolver().registerContentObserver(Settings.System.CONTENT_URI, true, volumeObserver);
 
         volumeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0);
+                if (fromUser) {
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, AudioManager.FLAG_SHOW_UI);
+                }
             }
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
@@ -129,7 +147,6 @@ public class PlayerActivity extends AppCompatActivity {
             int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
             if (vol < maxVolume) {
                 audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol + 1, AudioManager.FLAG_PLAY_SOUND);
-                volumeSeekBar.setProgress(vol + 1);
             }
         });
 
@@ -137,16 +154,13 @@ public class PlayerActivity extends AppCompatActivity {
             int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
             if (vol > 0) {
                 audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol - 1, AudioManager.FLAG_PLAY_SOUND);
-                volumeSeekBar.setProgress(vol - 1);
             }
         });
 
-        // Bind service
         Intent serviceIntent = new Intent(this, MusicService.class);
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
-        // Listeners
         btnPlayPause.setOnClickListener(v -> togglePlayPause());
         btnNext.setOnClickListener(v -> playNextSong());
         btnPrev.setOnClickListener(v -> playPreviousSong());
@@ -183,11 +197,11 @@ public class PlayerActivity extends AppCompatActivity {
             popup.getMenuInflater().inflate(R.menu.more_menu, popup.getMenu());
             popup.setOnMenuItemClickListener(item -> {
                 int id = item.getItemId();
-                if (id == R.id.menu_delete) {
-                    deleteCurrentSong();
-                    return true;
-                } else if (id == R.id.menu_settings) {
+                if (id == R.id.menu_settings) {
                     openSettings();
+                    return true;
+                } else if (id == R.id.menu_delete) {
+                    deleteCurrentSong();
                     return true;
                 } else if (id == R.id.menu_info) {
                     Intent intent = new Intent(this, SongInfoActivity.class);
@@ -248,16 +262,25 @@ public class PlayerActivity extends AppCompatActivity {
         }
         btnPlayPause.setImageResource(R.drawable.ic_pause);
 
+        Intent updateIntent = new Intent("com.example.gaanesuno.UPDATE_SONG");
+        updateIntent.putExtra("position", position);
+        sendBroadcast(updateIntent);
+
         musicService.setOnCompletionListener(() -> {
-            if (isRepeat) playSong();
-            else playNextSong();
+            if (isRepeat) {
+                musicService.playMedia(currentSong);
+            } else {
+                playNextSong();
+            }
         });
+
     }
 
     void playNextSong() {
         position = isShuffle ? new Random().nextInt(songs.size()) : (position + 1) % songs.size();
         playSong();
     }
+
     void playPreviousSong() {
         position = isShuffle ? new Random().nextInt(songs.size()) : (position - 1 + songs.size()) % songs.size();
         playSong();
@@ -369,6 +392,9 @@ public class PlayerActivity extends AppCompatActivity {
         if (isBound) {
             unbindService(serviceConnection);
             isBound = false;
+        }
+        if (volumeObserver != null) {
+            getContentResolver().unregisterContentObserver(volumeObserver);
         }
         unregisterReceiver(notificationReceiver);
         super.onDestroy();
