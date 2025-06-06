@@ -18,10 +18,12 @@ public class Song implements Serializable {
     }
 
     public String getTitle() {
+
         return title;
     }
 
     public String getArtist() {
+
         return artist;
     }
 
