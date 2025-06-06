@@ -70,10 +70,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         songListView.setOnItemClickListener((parent, view, pos, id) -> {
+            boolean isSameSong = (pos == MusicState.currentlyPlayingPosition);
+            boolean shouldResume = isSameSong && MusicState.isPlaying == false;
+
             Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
             intent.putExtra("songsList", (Serializable) songsList);
             intent.putExtra("position", pos);
-            intent.putExtra("resumePlayback", pos == MusicState.currentlyPlayingPosition);
+            intent.putExtra("resumePlayback", shouldResume);
 
             MusicState.songList = songsList;
             MusicState.currentlyPlayingPosition = pos;
@@ -193,8 +196,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         if (requestCode == REQUEST_PERMISSION) {

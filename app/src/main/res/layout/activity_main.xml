@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="0.9"
             android:gravity="start"
-            android:text="Gaane Suno"
+            android:text=" Gaane Suno"
             android:textColor="#FFFFFF"
             android:textSize="26sp"
             android:textStyle="bold" />

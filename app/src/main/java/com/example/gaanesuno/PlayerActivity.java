@@ -243,7 +243,7 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void playSong() {
-        if (songs == null || songs.isEmpty()) return;
+        if (songs == null || songs.isEmpty() || musicService == null) return;
         currentSong = songs.get(position);
         MusicState.currentlyPlayingPosition = position;
 
@@ -257,7 +257,11 @@ public class PlayerActivity extends AppCompatActivity {
             albumArt.setImageResource(R.drawable.ic_album_placeholder);
         }
 
-        if (!musicService.isPlaying() || !musicService.isSameSong(currentSong.getPath())) {
+        if (musicService.isSameSong(currentSong.getPath())) {
+            if (!musicService.isPlaying()) {
+                musicService.resume();
+            }
+        } else {
             musicService.playMedia(currentSong);
         }
         btnPlayPause.setImageResource(R.drawable.ic_pause);
@@ -273,7 +277,6 @@ public class PlayerActivity extends AppCompatActivity {
                 playNextSong();
             }
         });
-
     }
 
     void playNextSong() {
