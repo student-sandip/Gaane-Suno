@@ -11,8 +11,8 @@
 
         <!-- Header -->
         <LinearLayout
-            android:layout_width="424dp"
-            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:background="#E65100"
             android:gravity="center_vertical"
             android:orientation="horizontal"

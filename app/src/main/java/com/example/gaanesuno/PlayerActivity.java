@@ -168,6 +168,7 @@ public class PlayerActivity extends AppCompatActivity {
         btnShuffle.setOnClickListener(v -> {
             isShuffle = !isShuffle;
             btnShuffle.setImageResource(isShuffle ? R.drawable.ic_shuffle_on : R.drawable.ic_shuffle_off);
+            Toast.makeText(this, isShuffle ? "Shuffle On" : "Shuffle Off", Toast.LENGTH_SHORT).show();
         });
 
         btnRepeat.setOnClickListener(v -> {
