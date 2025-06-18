@@ -4,6 +4,8 @@
     <color name="white">#FFFFFFFF</color>
     <color name="highlight">#FF4500</color>
     <color name="orange">#E65100</color>
-<!--    <color name="blackk">#161414</color>-->
+    <color name="songPlayingBackground">#1AFFFFFF</color>
+
+    <!--    <color name="blackk">#161414</color>-->
 
 </resources>

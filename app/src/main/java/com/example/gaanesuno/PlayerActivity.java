@@ -187,11 +187,6 @@ public class PlayerActivity extends AppCompatActivity {
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
-        albumArt.setOnClickListener(v -> {
-            showingLyrics = !showingLyrics;
-            lyricsView.setVisibility(showingLyrics ? View.VISIBLE : View.GONE);
-            lyricsView.setText("Sample lyrics...\nYou can load actual lyrics here.");
-        });
 
         findViewById(R.id.btnMore).setOnClickListener(view -> {
             PopupMenu popup = new PopupMenu(this, view);
@@ -239,7 +234,6 @@ public class PlayerActivity extends AppCompatActivity {
         btnRepeat = findViewById(R.id.btnRepeat);
         btnTimer = findViewById(R.id.btnTimer);
         volumeSeekBar = findViewById(R.id.volumeSeekBar);
-        lyricsView = findViewById(R.id.lyricsView);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
     }
 
@@ -325,34 +319,72 @@ public class PlayerActivity extends AppCompatActivity {
         final String[] options = {"5 minutes", "15 minutes", "30 minutes", "45 minutes", "60 minutes", "120 minutes", "Cancel Timer"};
         final int[] times = {5, 15, 30, 45, 60, 120, 0};
 
-        new AlertDialog.Builder(this)
-                .setTitle("Set Sleep Timer")
-                .setItems(options, (dialog, which) -> {
-                    if (times[which] == 0) {
-                        if (sleepTimer != null) {
-                            sleepTimer.cancel();
-                            sleepTimer = null;
-                            btnTimer.setImageResource(R.drawable.ic_timer);
-                            Toast.makeText(this, "Sleep timer canceled", Toast.LENGTH_SHORT).show();
+        boolean timerRunning = (sleepTimer != null);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Set Sleep Timer");
+
+        builder.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, options) {
+            @Override
+            public boolean isEnabled(int position) {
+                // Only "Cancel Timer" (last one) is enabled if timer is already running
+                return !timerRunning || position == options.length - 1;
+            }
+
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                if (timerRunning && position != options.length - 1) {
+                    view.setEnabled(false);
+                    view.setAlpha(0.5f);
+                } else {
+                    view.setEnabled(true);
+                    view.setAlpha(1f);
+                }
+                return view;
+            }
+        }, (dialog, which) -> {
+            if (times[which] == 0) { // Cancel Timer
+                if (sleepTimer != null) {
+                    sleepTimer.cancel();
+                    sleepTimer = null;
+                    btnTimer.setImageResource(R.drawable.ic_timer);
+                    Toast.makeText(this, "Sleep timer canceled", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                int minutes = times[which];
+                if (sleepTimer != null) sleepTimer.cancel();
+
+                long duration = minutes * 60 * 1000L;
+                long fadeStartTime = duration - 5000L; // Last 5 seconds fade
+
+                sleepTimer = new CountDownTimer(duration, 1000) {
+                    public void onTick(long millisUntilFinished) {
+                        if (millisUntilFinished <= 5000 && musicService != null) {
+                            float volume = millisUntilFinished / 5000f;
+                            musicService.setPlayerVolume(volume);
                         }
-                    } else {
-                        int minutes = times[which];
-                        if (sleepTimer != null) sleepTimer.cancel();
-                        sleepTimer = new CountDownTimer(minutes * 60000L, 1000) {
-                            public void onTick(long millisUntilFinished) {}
-                            public void onFinish() {
-                                if (musicService != null && musicService.isPlaying()) {
-                                    musicService.pause();
-                                    btnPlayPause.setImageResource(R.drawable.ic_play);
-                                    Toast.makeText(PlayerActivity.this, "Playback stopped by sleep timer", Toast.LENGTH_SHORT).show();
-                                }
-                            }
-                        }.start();
-                        btnTimer.setImageResource(R.drawable.ic_timer_on);
-                        Toast.makeText(this, "Timer set for " + minutes + " minutes", Toast.LENGTH_SHORT).show();
                     }
-                }).show();
+
+                    public void onFinish() {
+                        if (musicService != null && musicService.isPlaying()) {
+                            musicService.pause();
+                            musicService.setPlayerVolume(1.0f);
+                            btnPlayPause.setImageResource(R.drawable.ic_play);
+                            btnTimer.setImageResource(R.drawable.ic_timer);
+                            Toast.makeText(PlayerActivity.this, "Playback stopped by sleep timer", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }.start();
+
+                btnTimer.setImageResource(R.drawable.ic_timer_on);
+                Toast.makeText(this, "Timer set for " + minutes + " minutes", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.show();
     }
+
 
     private void deleteCurrentSong() {
         if (currentSong == null) return;

@@ -100,6 +100,8 @@ public class SongAdapter extends BaseAdapter {
             holder.artist.setTypeface(null, Typeface.BOLD);
             holder.title.setPaintFlags(holder.title.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
             holder.artist.setPaintFlags(holder.artist.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+            convertView.setBackgroundColor(ContextCompat.getColor(context, R.color.songPlayingBackground));
+
         } else {
             holder.title.setTextColor(Color.WHITE);
             holder.artist.setTextColor(Color.GRAY);
@@ -107,6 +109,8 @@ public class SongAdapter extends BaseAdapter {
             holder.artist.setTypeface(null, Typeface.NORMAL);
             holder.title.setPaintFlags(holder.title.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG));
             holder.artist.setPaintFlags(holder.artist.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG));
+            convertView.setBackgroundColor(Color.TRANSPARENT);
+
         }
 
         return convertView;

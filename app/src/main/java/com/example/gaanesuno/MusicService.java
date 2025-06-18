@@ -178,6 +178,7 @@ public class MusicService extends Service {
         if (MusicState.currentlyPlayingPosition > 0) {
             MusicState.currentlyPlayingPosition--;
             playMedia(MusicState.songList.get(MusicState.currentlyPlayingPosition));
+            notifySongChanged();
         }
     }
 
@@ -185,6 +186,7 @@ public class MusicService extends Service {
         if (MusicState.currentlyPlayingPosition < MusicState.songList.size() - 1) {
             MusicState.currentlyPlayingPosition++;
             playMedia(MusicState.songList.get(MusicState.currentlyPlayingPosition));
+            notifySongChanged();
         }
     }
 
@@ -250,6 +252,12 @@ public class MusicService extends Service {
         Intent intent = new Intent("com.example.gaanesuno.PLAYBACK_STATE_CHANGED");
         intent.putExtra("isPlaying", isPlaying);
         sendBroadcast(intent);
+    }
+
+    public void setPlayerVolume(float volume) {
+        if (mediaPlayer != null) {
+            mediaPlayer.setVolume(volume, volume);
+        }
     }
 
     @Override

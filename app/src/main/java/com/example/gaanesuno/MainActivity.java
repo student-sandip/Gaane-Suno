@@ -49,6 +49,17 @@ public class MainActivity extends AppCompatActivity {
                     if (adapter != null) {
                         adapter.setCurrentlyPlayingPosition(newPos);
                         adapter.notifyDataSetChanged();
+                        songListView.invalidateViews();
+
+                        int first = songListView.getFirstVisiblePosition();
+                        int last = songListView.getLastVisiblePosition();
+
+                        for (int i = first; i <= last; i++) {
+                            View item = songListView.getChildAt(i - first);
+                            if (item != null) {
+                                adapter.getView(i, item, songListView);
+                            }
+                        }
                     }
                 }
             }

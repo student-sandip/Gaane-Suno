@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/splashLogo"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="0dp"
+        android:layout_marginTop="5dp"
         android:textColor="#6B6969"
         android:textSize="18sp" />
 
