@@ -1,6 +1,6 @@
-# 🎵 GaanaSuno - Smart Android Music Player App
+# 🎵 GaaneSuno - Smart Android Music Player App
 
-**GaanaSuno** is a offline, sleek, modern, and fully-featured music player app for Android, built with a responsive UI and advanced playback capabilities. Designed to give users an elegant and smooth experience while enjoying their local music library.
+**GaaneSuno** is a offline, sleek, modern, and fully-featured music player app for Android, built with a responsive UI and advanced playback capabilities. Designed to give users an elegant and smooth experience while enjoying their local music library.
 
 ---
 
@@ -41,9 +41,9 @@ _Coming soon..._ (Include UI screenshots showing key features)
 
 ## 🙏 Thanks for Visiting!
 
-Thank you for checking out **GaanaSuno**! 
+Thank you for checking out **GaaneSuno**! 
 
-The **GaanaSuno** music player app is currently under final polishing and will be published on the Play Store very soon! Stay tuned for the official release.  
+The **GaaneSuno** music player app is currently under final polishing and will be published on the Play Store very soon! Stay tuned for the official release.  
 I hope you’ll enjoy the smooth experience, rich features, and elegant design once it’s live.  
 Feel free to ⭐ the repo or share any feedback — your support means a lot!
 Happy listening! 🎶
