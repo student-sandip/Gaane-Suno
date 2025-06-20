@@ -14,6 +14,7 @@
 - 🔊 **Volume Control** slider with mute/max options
 - ⏱ **Real-time progress and total time** indicator
 - 📱 Fully **responsive UI** with support for all screen sizes
+- 🔍 Smart & Instant Search — Quickly find your favorite songs with a clean, responsive UI and smooth transitions.
 - 🔄 Inter-activity sync between **MainActivity** and **PlayerActivity**
 - 📤 Communication using **BroadcastReceiver** for live song updates
 - ⚙️ Settings screen for customizing user preferences
