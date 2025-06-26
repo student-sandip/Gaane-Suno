@@ -10,6 +10,7 @@
 
     <!-- Top App Bar -->
 
+
     <!-- Settings Options -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/appBarLayout"
@@ -49,7 +50,6 @@
             app:layout_constraintTop_toTopOf="@id/settings_back_btn"
             android:paddingStart="8dp"
             android:paddingEnd="16dp" />
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ScrollView

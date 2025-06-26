@@ -42,4 +42,8 @@ public class Song implements Serializable {
     public long getId() {
         return 0;
     }
+
+    public String getAlbumArt() {
+        return albumArt;
+    }
 }

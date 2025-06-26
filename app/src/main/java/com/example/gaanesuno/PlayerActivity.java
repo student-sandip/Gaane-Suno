@@ -30,7 +30,7 @@ public class PlayerActivity extends AppCompatActivity {
     private SeekBar seekBar, volumeSeekBar;
     private ImageButton btnPlayPause, btnNext, btnPrev, btnShuffle, btnRepeat, btnTimer;
     private ImageView albumArt;
-
+    private Vibrator vibrator;
     private ArrayList<Song> songs;
     private int position = 0;
     private boolean isShuffle = false;
@@ -90,6 +90,8 @@ public class PlayerActivity extends AppCompatActivity {
 
         initViews();
 
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+
         IntentFilter filter = new IntentFilter();
         filter.addAction("com.example.gaanesuno.ACTION_NEXT");
         filter.addAction("com.example.gaanesuno.ACTION_PREV");
@@ -144,6 +146,7 @@ public class PlayerActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btnVolumeUp).setOnClickListener(v -> {
+            vibrateShort();
             int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
             if (vol < maxVolume) {
                 audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol + 1, AudioManager.FLAG_PLAY_SOUND);
@@ -151,6 +154,7 @@ public class PlayerActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btnVolumeDown).setOnClickListener(v -> {
+            vibrateShort();
             int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
             if (vol > 0) {
                 audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol - 1, AudioManager.FLAG_PLAY_SOUND);
@@ -166,12 +170,14 @@ public class PlayerActivity extends AppCompatActivity {
         btnPrev.setOnClickListener(v -> playPreviousSong());
 
         btnShuffle.setOnClickListener(v -> {
+            vibrateShort();
             isShuffle = !isShuffle;
             btnShuffle.setImageResource(isShuffle ? R.drawable.ic_shuffle_on : R.drawable.ic_shuffle_off);
             Toast.makeText(this, isShuffle ? "Shuffle On" : "Shuffle Off", Toast.LENGTH_SHORT).show();
         });
 
         btnRepeat.setOnClickListener(v -> {
+            vibrateShort();
             isRepeat = !isRepeat;
             btnRepeat.setImageResource(isRepeat ? R.drawable.ic_repeat_one : R.drawable.ic_repeat_off);
             Toast.makeText(this, isRepeat ? "Repeat On" : "Repeat Off", Toast.LENGTH_SHORT).show();
@@ -237,6 +243,15 @@ public class PlayerActivity extends AppCompatActivity {
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
     }
 
+    private void vibrateShort() {
+        if (vibrator != null && vibrator.hasVibrator()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                vibrator.vibrate(40);
+            }
+        }
+    }
     private void playSong() {
         if (songs == null || songs.isEmpty() || musicService == null) return;
         currentSong = songs.get(position);
@@ -277,14 +292,23 @@ public class PlayerActivity extends AppCompatActivity {
     void playNextSong() {
         position = isShuffle ? new Random().nextInt(songs.size()) : (position + 1) % songs.size();
         playSong();
+        vibrateShort();
     }
 
     void playPreviousSong() {
-        position = isShuffle ? new Random().nextInt(songs.size()) : (position - 1 + songs.size()) % songs.size();
-        playSong();
+        if (musicService != null && musicService.getCurrentPosition() > 5000) {
+            musicService.seekTo(0);
+            vibrateShort();
+        } else {
+            position = isShuffle ? new Random().nextInt(songs.size()) : (position - 1 + songs.size()) % songs.size();
+            playSong();
+            vibrateShort();
+        }
     }
 
+
     private void togglePlayPause() {
+        vibrateShort();
         if (musicService != null) {
             if (musicService.isPlaying()) {
                 musicService.pause();
@@ -307,7 +331,7 @@ public class PlayerActivity extends AppCompatActivity {
                 totalTime.setText(formatTime(duration));
             }
             updateSeekBar();
-        }, 500);
+        }, 50);
     }
 
     private String formatTime(int milliseconds) {
@@ -316,6 +340,7 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void showTimerDialog() {
+        vibrateShort();
         final String[] options = {"5 minutes", "15 minutes", "30 minutes", "45 minutes", "60 minutes", "120 minutes", "Cancel Timer"};
         final int[] times = {5, 15, 30, 45, 60, 120, 0};
 

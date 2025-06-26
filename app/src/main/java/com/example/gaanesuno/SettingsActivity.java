@@ -31,7 +31,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         findViewById(R.id.settings_customer_support).setOnClickListener(v -> {
             Intent emailIntent = new Intent(Intent.ACTION_SENDTO);
-            emailIntent.setData(Uri.parse("mailto:support@gaanesuno.com"));
+            emailIntent.setData(Uri.parse("mailto:sunogaane8@gmail.com"));
             emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Support Needed");
             startActivity(Intent.createChooser(emailIntent, "Contact Support"));
         });
@@ -53,16 +53,16 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.settings_privacy_policy).setOnClickListener(v -> {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.example.com/privacy")));
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.termsfeed.com/live/c021249a-0e21-4b4f-b814-e3fbdb7f23c3")));
         });
 
         findViewById(R.id.settings_terms_conditions).setOnClickListener(v -> {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.example.com/terms")));
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://student-sandip.github.io/gaanasuno-policy/")));
         });
 
         findViewById(R.id.settings_bug_fix).setOnClickListener(v -> {
             Intent bugIntent = new Intent(Intent.ACTION_SENDTO);
-            bugIntent.setData(Uri.parse("mailto:support@gaanesuno.com"));
+            bugIntent.setData(Uri.parse("mailto:sunogaane8@gmail.com"));
             bugIntent.putExtra(Intent.EXTRA_SUBJECT, "Bug Report");
             startActivity(Intent.createChooser(bugIntent, "Report Bug"));
         });

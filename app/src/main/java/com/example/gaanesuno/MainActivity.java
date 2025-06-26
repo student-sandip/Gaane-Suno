@@ -2,6 +2,7 @@ package com.example.gaanesuno;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -12,10 +13,16 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.provider.MediaStore;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -74,6 +81,9 @@ public class MainActivity extends AppCompatActivity {
         songListView = findViewById(R.id.songListView);
         songsList = new ArrayList<>();
 
+        ImageButton btnSearch = findViewById(R.id.btnSearch);
+        btnSearch.setOnClickListener(v -> showSearchDialog());
+
         if (hasPermission()) {
             loadSongsInBackground();
         } else {
@@ -81,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         songListView.setOnItemClickListener((parent, view, pos, id) -> {
+            vibrateShort();
             boolean isSameSong = (pos == MusicState.currentlyPlayingPosition);
             boolean shouldResume = isSameSong && MusicState.isPlaying == false;
 
@@ -112,6 +123,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void vibrateShort() {
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        if (v != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                v.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                v.vibrate(40);
+            }
+        }
+    }
     private boolean hasPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO)
@@ -242,4 +263,62 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+    private void showSearchDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_search, null);
+        builder.setView(dialogView);
+
+        EditText searchInput = dialogView.findViewById(R.id.searchInput);
+        ListView searchListView = dialogView.findViewById(R.id.searchListView);
+
+        ArrayList<Song> filteredSongs = new ArrayList<>(songsList);
+        SongAdapter searchAdapter = new SongAdapter(this, filteredSongs);
+        searchListView.setAdapter(searchAdapter);
+
+        searchInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String query = s.toString().toLowerCase();
+                filteredSongs.clear();
+                for (Song song : songsList) {
+                    if (song.getTitle().toLowerCase().contains(query) || song.getArtist().toLowerCase().contains(query)) {
+                        filteredSongs.add(song);
+                    }
+                }
+                searchAdapter.notifyDataSetChanged();
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        searchListView.setOnItemClickListener((parent, view, position, id) -> {
+            Song selectedSong = filteredSongs.get(position);
+            int actualPosition = songsList.indexOf(selectedSong);
+            openPlayerActivity(actualPosition);
+            dialog.dismiss();
+        });
+    }
+
+    private void openPlayerActivity(int position) {
+        Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
+        intent.putExtra("songsList", (Serializable) songsList);
+        intent.putExtra("position", position);
+        boolean resumePlayback = false;
+        intent.putExtra("resumePlayback", resumePlayback);
+
+        MusicState.songList = songsList;
+        MusicState.currentlyPlayingPosition = position;
+
+        if (adapter != null) {
+            adapter.setCurrentlyPlayingPosition(position);
+            adapter.notifyDataSetChanged();
+        }
+
+        startActivityForResult(intent, PLAYER_ACTIVITY_REQUEST_CODE);
+    }
+
+
 }
