@@ -9,8 +9,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.CheckBox;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.core.content.ContextCompat;
@@ -18,18 +18,17 @@ import androidx.core.content.ContextCompat;
 import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class SongAdapter extends BaseAdapter {
-    private int currentlyPlayingPosition = -1;
-
-    public void setCurrentlyPlayingPosition(int position) {
-        this.currentlyPlayingPosition = position;
-        notifyDataSetChanged();
-    }
 
     private final Context context;
     private final ArrayList<Song> songs;
     private final LayoutInflater inflater;
+    private int currentlyPlayingPosition = -1;
+    private final Set<Integer> selectedItems = new HashSet<>();
+    private boolean isSelectionMode = false;
 
     public SongAdapter(Context context, ArrayList<Song> songs) {
         this.context = context;
@@ -37,40 +36,52 @@ public class SongAdapter extends BaseAdapter {
         this.inflater = LayoutInflater.from(context);
     }
 
+    public void setCurrentlyPlayingPosition(int position) {
+        this.currentlyPlayingPosition = position;
+        notifyDataSetChanged();
+    }
+
+    public void setSelectedItems(Set<Integer> selected) {
+        selectedItems.clear();
+        selectedItems.addAll(selected);
+        isSelectionMode = !selectedItems.isEmpty();
+        notifyDataSetChanged();
+    }
+
     @Override
     public int getCount() {
-
         return songs.size();
     }
 
     @Override
     public Object getItem(int position) {
-
         return songs.get(position);
     }
 
     @Override
     public long getItemId(int position) {
-
         return position;
     }
 
     private static class ViewHolder {
+        ImageView thumbnail;
         TextView title;
         TextView artist;
-        ImageView thumbnail;
+        CheckBox checkbox;
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+
         ViewHolder holder;
 
         if (convertView == null) {
             convertView = inflater.inflate(R.layout.song_item, parent, false);
             holder = new ViewHolder();
+            holder.thumbnail = convertView.findViewById(R.id.albumArt);
             holder.title = convertView.findViewById(R.id.songTitle);
             holder.artist = convertView.findViewById(R.id.songArtist);
-            holder.thumbnail = convertView.findViewById(R.id.albumArt);
+            holder.checkbox = convertView.findViewById(R.id.songCheckbox);
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();
@@ -79,6 +90,7 @@ public class SongAdapter extends BaseAdapter {
         Song song = songs.get(position);
         holder.title.setText(song.getTitle());
         holder.artist.setText(song.getArtist());
+
         holder.title.setSelected(true);
         holder.artist.setSelected(true);
 
@@ -101,7 +113,6 @@ public class SongAdapter extends BaseAdapter {
             holder.title.setPaintFlags(holder.title.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
             holder.artist.setPaintFlags(holder.artist.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
             convertView.setBackgroundColor(ContextCompat.getColor(context, R.color.songPlayingBackground));
-
         } else {
             holder.title.setTextColor(Color.WHITE);
             holder.artist.setTextColor(Color.GRAY);
@@ -110,8 +121,15 @@ public class SongAdapter extends BaseAdapter {
             holder.title.setPaintFlags(holder.title.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG));
             holder.artist.setPaintFlags(holder.artist.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG));
             convertView.setBackgroundColor(Color.TRANSPARENT);
-
         }
+
+        if (isSelectionMode) {
+            holder.checkbox.setVisibility(View.VISIBLE);
+            holder.checkbox.setChecked(selectedItems.contains(position));
+        } else {
+            holder.checkbox.setVisibility(View.GONE);
+        }
+
 
         return convertView;
     }

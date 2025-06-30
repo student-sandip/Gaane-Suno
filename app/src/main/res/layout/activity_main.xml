@@ -10,6 +10,94 @@
     android:padding="@dimen/_20sdp"
     tools:context=".MainActivity">
 
+    <!-- 🔶 Selection Toolbar -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_22sdp"
+        android:background="#E65100"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        android:visibility="gone"
+        app:title="Gaane Suno"
+        app:titleTextColor="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="@dimen/_3sdp"
+        android:paddingEnd="@dimen/_5sdp"
+        android:paddingTop="@dimen/_7sdp"
+        android:paddingBottom="@dimen/_7sdp">
+
+        <ImageButton
+            android:id="@+id/btnCloseSelection"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_close"
+            android:layout_marginEnd="@dimen/_5sdp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Close"
+            app:tint="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/tvSelectedCount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="0 selected"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:gravity="start|center_vertical" />
+
+        <ImageButton
+            android:id="@+id/btnInfoSelection"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_info"
+            android:layout_marginEnd="@dimen/_18sdp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Info"
+            app:tint="#FFFFFF" />
+
+        <ImageButton
+            android:id="@+id/btnPlaySelection"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_play"
+            android:layout_marginEnd="@dimen/_18sdp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Play"
+            app:tint="#FFFFFF" />
+
+        <ImageButton
+            android:id="@+id/btnShareSelection"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_share"
+            android:layout_marginEnd="@dimen/_18sdp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Share"
+            app:tint="#FFFFFF" />
+
+        <ImageButton
+            android:id="@+id/btnDeleteSelection"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_delete"
+            android:layout_marginEnd="@dimen/_5sdp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Delete"
+            app:tint="#FFFFFF" />
+    </LinearLayout>
+</androidx.appcompat.widget.Toolbar>
+
+
+    <!-- 🔷 App Title Bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -60,6 +148,7 @@
             app:tint="#FFFFFF" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <!-- 🔸 Song List -->
     <ListView
         android:id="@+id/songListView"
         android:layout_width="match_parent"
@@ -73,16 +162,12 @@
         android:paddingBottom="@dimen/_8sdp"
         android:scrollbars="vertical" />
 
+    <!-- 🔻 Footer -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingTop="@dimen/_12sdp"
-        android:paddingBottom="@dimen/_12sdp"
-        android:background="@android:color/transparent"
-        app:layout_constraintTop_toBottomOf="@id/volumeControl"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:paddingBottom="@dimen/_12sdp">
 
         <TextView
             android:id="@+id/footer"
@@ -93,6 +178,5 @@
             android:textColor="#888888"
             android:textSize="@dimen/_12ssp" />
     </FrameLayout>
-
 
 </LinearLayout>

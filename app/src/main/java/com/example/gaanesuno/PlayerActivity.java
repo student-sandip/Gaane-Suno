@@ -14,8 +14,11 @@ import android.os.*;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.view.*;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.*;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -224,6 +227,31 @@ public class PlayerActivity extends AppCompatActivity {
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             window.setStatusBarColor(ContextCompat.getColor(this, R.color.black));
         }
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                finish();
+                overridePendingTransition(0, R.anim.slide_out_down_fade);
+            }
+        });
+
+    }
+
+    private void animateSongChange(boolean isNext) {
+        int inAnim = isNext ? R.anim.slide_in_right : R.anim.slide_in_left;
+        int outAnim = isNext ? R.anim.slide_out_left : R.anim.slide_out_right;
+
+        Animation in = AnimationUtils.loadAnimation(this, inAnim);
+        Animation out = AnimationUtils.loadAnimation(this, outAnim);
+
+        albumArt.startAnimation(out);
+        tvTitle.startAnimation(out);
+        tvArtist.startAnimation(out);
+
+        albumArt.startAnimation(in);
+        tvTitle.startAnimation(in);
+        tvArtist.startAnimation(in);
     }
 
     private void initViews() {
@@ -293,6 +321,7 @@ public class PlayerActivity extends AppCompatActivity {
         position = isShuffle ? new Random().nextInt(songs.size()) : (position + 1) % songs.size();
         playSong();
         vibrateShort();
+        animateSongChange(true);
     }
 
     void playPreviousSong() {
@@ -303,6 +332,7 @@ public class PlayerActivity extends AppCompatActivity {
             position = isShuffle ? new Random().nextInt(songs.size()) : (position - 1 + songs.size()) % songs.size();
             playSong();
             vibrateShort();
+            animateSongChange(false);
         }
     }
 

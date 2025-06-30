@@ -1,11 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/item_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
+    android:gravity="center_vertical"
     android:padding="12dp"
     android:background="?android:selectableItemBackground">
 
+    <!-- Album Art -->
     <ImageView
         android:id="@+id/albumArt"
         android:layout_width="48dp"
@@ -14,11 +17,12 @@
         android:src="@drawable/ic_album_placeholder"
         android:layout_marginEnd="12dp" />
 
+    <!-- Song Title + Artist -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/songTitle"
@@ -50,6 +54,19 @@
             android:scrollHorizontally="true"
             android:focusable="false"
             android:focusableInTouchMode="false"
-            android:freezesText="true"/>
+            android:freezesText="true" />
     </LinearLayout>
+
+    <CheckBox
+        android:id="@+id/songCheckbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="4dp"
+        android:visibility="gone"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:clickable="false"
+        android:buttonTint="#FFA726" />
+
 </LinearLayout>

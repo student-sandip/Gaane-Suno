@@ -13,6 +13,8 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
+import android.provider.MediaStore;
+import android.support.v4.media.session.MediaSessionCompat;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -35,6 +37,7 @@ public class MusicService extends Service {
     private String currentPath = "";
     private boolean isPlaying = false;
     private Song currentSong;
+    private MediaSessionCompat mediaSession;
 
     private OnSongCompleteListener onSongCompleteListener;
 
@@ -91,24 +94,22 @@ public class MusicService extends Service {
             currentSong = song;
             isPlaying = true;
 
+            initMediaSession();
+            showNotification(true);
+            notifySongChanged();
+
             mediaPlayer.setOnCompletionListener(mp -> {
                 isPlaying = false;
                 if (onSongCompleteListener != null) {
                     onSongCompleteListener.onComplete();
                 }
-                // Auto play next if available
-//                playNext(); // or notify completion only if you want manual next
             });
-
-            showNotification(true);
-            notifySongChanged();  // Broadcast song change to UI
 
         } catch (IOException e) {
             e.printStackTrace();
             stopMedia();
         }
     }
-
     public void pause() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
@@ -117,7 +118,6 @@ public class MusicService extends Service {
             notifyPlaybackStateChanged();
         }
     }
-
     public void resume() {
         if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
             mediaPlayer.start();
@@ -204,7 +204,19 @@ public class MusicService extends Service {
         PendingIntent nextPending = getServicePendingIntent(ACTION_NEXT, 3);
         PendingIntent closePending = getServicePendingIntent(ACTION_CLOSE, 4);
 
-        Bitmap albumArt = BitmapFactory.decodeResource(getResources(), R.drawable.ic_album_placeholder);
+        Bitmap albumArt;
+        if (currentSong != null && currentSong.getAlbumArt() != null) {
+            try {
+                Uri artUri = Uri.parse(currentSong.getAlbumArt());
+                Bitmap original = MediaStore.Images.Media.getBitmap(getContentResolver(), artUri);
+                albumArt = Bitmap.createScaledBitmap(original, 512, 512, true);
+            } catch (Exception e) {
+                e.printStackTrace();
+                albumArt = BitmapFactory.decodeResource(getResources(), R.drawable.ic_album_placeholder);
+            }
+        } else {
+            albumArt = BitmapFactory.decodeResource(getResources(), R.drawable.ic_album_placeholder);
+        }
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(currentSong != null ? currentSong.getTitle() : "GaaneSuno")
@@ -217,12 +229,32 @@ public class MusicService extends Service {
                         isPlaying ? "Pause" : "Play", playPausePending)
                 .addAction(R.drawable.ic_next, "Next", nextPending)
                 .addAction(R.drawable.ic_close, "Close", closePending)
-                .setStyle(new MediaStyle().setShowActionsInCompactView(0, 1, 2, 3))
-                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setStyle(new MediaStyle()
+                        .setMediaSession(mediaSession.getSessionToken())
+                        .setShowActionsInCompactView(0, 1, 2)
+                        .setShowCancelButton(true)
+                        .setCancelButtonIntent(closePending))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setOnlyAlertOnce(true)
                 .setOngoing(isPlaying);
 
         startForeground(NOTIFICATION_ID, builder.build());
+    }
+
+    private void initMediaSession() {
+        mediaSession = new MediaSessionCompat(this, "GaaneSunoMediaSession");
+        mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+
+        mediaSession.setCallback(new MediaSessionCompat.Callback() {
+            @Override public void onPlay() { resume(); }
+            @Override public void onPause() { pause(); }
+            @Override public void onSkipToNext() { playNext(); }
+            @Override public void onSkipToPrevious() { playPrevious(); }
+        });
+
+        mediaSession.setActive(true);
     }
 
     private PendingIntent getServicePendingIntent(String action, int requestCode) {
@@ -270,6 +302,10 @@ public class MusicService extends Service {
     public void onDestroy() {
         super.onDestroy();
         stopMedia();
+        if (mediaSession != null) {
+            mediaSession.release();
+            mediaSession = null;
+        }
         stopForeground(true);
     }
 }

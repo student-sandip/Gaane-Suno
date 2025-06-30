@@ -25,17 +25,21 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -45,6 +49,13 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<Song> songsList;
     private ListView songListView;
     private SongAdapter adapter;
+
+    private Toolbar selectionToolbar;
+    private TextView tvSelectedCount;
+    private ImageButton btnCloseSelection, btnPlaySelection, btnShareSelection, btnDeleteSelection;
+
+    private Set<Integer> selectedItems = new HashSet<>();
+    private boolean isSelectionMode = false;
 
     private final BroadcastReceiver songUpdateReceiver = new BroadcastReceiver() {
         @Override
@@ -57,16 +68,6 @@ public class MainActivity extends AppCompatActivity {
                         adapter.setCurrentlyPlayingPosition(newPos);
                         adapter.notifyDataSetChanged();
                         songListView.invalidateViews();
-
-                        int first = songListView.getFirstVisiblePosition();
-                        int last = songListView.getLastVisiblePosition();
-
-                        for (int i = first; i <= last; i++) {
-                            View item = songListView.getChildAt(i - first);
-                            if (item != null) {
-                                adapter.getView(i, item, songListView);
-                            }
-                        }
                     }
                 }
             }
@@ -78,8 +79,42 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Set up toolbar properly
+        selectionToolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(selectionToolbar);
+        selectionToolbar.setVisibility(View.GONE);
+
         songListView = findViewById(R.id.songListView);
         songsList = new ArrayList<>();
+
+        // Toolbar buttons
+        tvSelectedCount = findViewById(R.id.tvSelectedCount);
+        btnCloseSelection = findViewById(R.id.btnCloseSelection);
+        btnPlaySelection = findViewById(R.id.btnPlaySelection);
+        btnShareSelection = findViewById(R.id.btnShareSelection);
+        btnDeleteSelection = findViewById(R.id.btnDeleteSelection);
+
+        btnCloseSelection.setOnClickListener(v -> exitSelectionMode());
+
+        songListView.setOnItemClickListener((parent, view, pos, id) -> {
+            if (isSelectionMode) {
+                toggleSelection(pos);
+            } else {
+                openPlayerActivity(pos);
+            }
+        });
+
+        songListView.setOnItemLongClickListener((parent, view, pos, id) -> {
+            if (!isSelectionMode) enterSelectionMode();
+            toggleSelection(pos);
+            return true;
+        });
+
+        ImageView settingsButton = findViewById(R.id.btnSettings);
+        settingsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(intent);
+        });
 
         ImageButton btnSearch = findViewById(R.id.btnSearch);
         btnSearch.setOnClickListener(v -> showSearchDialog());
@@ -90,36 +125,58 @@ public class MainActivity extends AppCompatActivity {
             requestPermission();
         }
 
-        songListView.setOnItemClickListener((parent, view, pos, id) -> {
-            vibrateShort();
-            boolean isSameSong = (pos == MusicState.currentlyPlayingPosition);
-            boolean shouldResume = isSameSong && MusicState.isPlaying == false;
-
-            Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
-            intent.putExtra("songsList", (Serializable) songsList);
-            intent.putExtra("position", pos);
-            intent.putExtra("resumePlayback", shouldResume);
-
-            MusicState.songList = songsList;
-            MusicState.currentlyPlayingPosition = pos;
-
-            adapter.setCurrentlyPlayingPosition(pos);
-            adapter.notifyDataSetChanged();
-
-            startActivityForResult(intent, PLAYER_ACTIVITY_REQUEST_CODE);
-        });
-
-        ImageView settingsButton = findViewById(R.id.btnSettings);
-        settingsButton.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
-            startActivity(intent);
-        });
-
+        // Make status bar black
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             Window window = getWindow();
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             window.setStatusBarColor(ContextCompat.getColor(this, R.color.black));
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (isSelectionMode) {
+            exitSelectionMode();
+        } else {
+            super.onBackPressed();
+        }
+    }
+    private void enterSelectionMode() {
+        isSelectionMode = true;
+        selectedItems.clear();
+        selectionToolbar.setVisibility(View.VISIBLE);
+    }
+
+    private void exitSelectionMode() {
+        isSelectionMode = false;
+        selectedItems.clear();
+
+        if (adapter != null) {
+            adapter.setSelectedItems(selectedItems); // ⬅️ Very important
+            adapter.notifyDataSetChanged();          // ⬅️ Force UI update
+        }
+
+        selectionToolbar.setVisibility(View.GONE);
+    }
+
+    private void toggleSelection(int pos) {
+        if (selectedItems.contains(pos)) {
+            selectedItems.remove(pos);
+        } else {
+            selectedItems.add(pos);
+            vibrateShort();
+        }
+
+        if (selectedItems.isEmpty()) {
+            exitSelectionMode();
+        } else {
+            tvSelectedCount.setText(selectedItems.size() + " selected");
+        }
+
+        if (adapter != null) {
+            adapter.setSelectedItems(selectedItems);
+            adapter.notifyDataSetChanged();
         }
     }
 
@@ -133,6 +190,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
     private boolean hasPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO)
@@ -156,7 +214,6 @@ public class MainActivity extends AppCompatActivity {
     private void loadSongsInBackground() {
         new Thread(() -> {
             ArrayList<Song> loadedSongs = new ArrayList<>();
-
             ContentResolver contentResolver = getContentResolver();
             Uri songUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
 
@@ -177,26 +234,79 @@ public class MainActivity extends AppCompatActivity {
                     String path = cursor.getString(dataColumn);
                     long albumId = cursor.getLong(albumIdColumn);
                     long duration = cursor.getLong(durationColumn);
-
                     Uri albumArtUri = Uri.parse("content://media/external/audio/albumart/" + albumId);
                     loadedSongs.add(new Song(title, artist, path, albumArtUri.toString(), duration));
                 } while (cursor.moveToNext());
-
                 cursor.close();
             }
 
             runOnUiThread(() -> {
                 songsList = loadedSongs;
-
                 if (songsList.isEmpty()) {
                     Toast.makeText(MainActivity.this, "No songs found on device", Toast.LENGTH_SHORT).show();
                 } else {
                     adapter = new SongAdapter(MainActivity.this, songsList);
                     adapter.setCurrentlyPlayingPosition(MusicState.currentlyPlayingPosition);
+                    adapter.setSelectedItems(selectedItems);
                     songListView.setAdapter(adapter);
                 }
             });
         }).start();
+    }
+
+    private void showSearchDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_search, null);
+        builder.setView(dialogView);
+
+        EditText searchInput = dialogView.findViewById(R.id.searchInput);
+        ListView searchListView = dialogView.findViewById(R.id.searchListView);
+
+        ArrayList<Song> filteredSongs = new ArrayList<>(songsList);
+        SongAdapter searchAdapter = new SongAdapter(this, filteredSongs);
+        searchListView.setAdapter(searchAdapter);
+
+        searchInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String query = s.toString().toLowerCase();
+                filteredSongs.clear();
+                for (Song song : songsList) {
+                    if (song.getTitle().toLowerCase().contains(query) || song.getArtist().toLowerCase().contains(query)) {
+                        filteredSongs.add(song);
+                    }
+                }
+                searchAdapter.notifyDataSetChanged();
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        searchListView.setOnItemClickListener((parent, view, position, id) -> {
+            Song selectedSong = filteredSongs.get(position);
+            int actualPosition = songsList.indexOf(selectedSong);
+            openPlayerActivity(actualPosition);
+            dialog.dismiss();
+        });
+    }
+
+    private void openPlayerActivity(int position) {
+        Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
+        intent.putExtra("songsList", (Serializable) songsList);
+        intent.putExtra("position", position);
+        intent.putExtra("resumePlayback", false);
+
+        MusicState.songList = songsList;
+        MusicState.currentlyPlayingPosition = position;
+
+        if (adapter != null) {
+            adapter.setCurrentlyPlayingPosition(position);
+            adapter.notifyDataSetChanged();
+        }
+
+        startActivityForResult(intent, PLAYER_ACTIVITY_REQUEST_CODE);
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -263,62 +373,4 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
-    private void showSearchDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_search, null);
-        builder.setView(dialogView);
-
-        EditText searchInput = dialogView.findViewById(R.id.searchInput);
-        ListView searchListView = dialogView.findViewById(R.id.searchListView);
-
-        ArrayList<Song> filteredSongs = new ArrayList<>(songsList);
-        SongAdapter searchAdapter = new SongAdapter(this, filteredSongs);
-        searchListView.setAdapter(searchAdapter);
-
-        searchInput.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String query = s.toString().toLowerCase();
-                filteredSongs.clear();
-                for (Song song : songsList) {
-                    if (song.getTitle().toLowerCase().contains(query) || song.getArtist().toLowerCase().contains(query)) {
-                        filteredSongs.add(song);
-                    }
-                }
-                searchAdapter.notifyDataSetChanged();
-            }
-            @Override public void afterTextChanged(Editable s) {}
-        });
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
-
-        searchListView.setOnItemClickListener((parent, view, position, id) -> {
-            Song selectedSong = filteredSongs.get(position);
-            int actualPosition = songsList.indexOf(selectedSong);
-            openPlayerActivity(actualPosition);
-            dialog.dismiss();
-        });
-    }
-
-    private void openPlayerActivity(int position) {
-        Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
-        intent.putExtra("songsList", (Serializable) songsList);
-        intent.putExtra("position", position);
-        boolean resumePlayback = false;
-        intent.putExtra("resumePlayback", resumePlayback);
-
-        MusicState.songList = songsList;
-        MusicState.currentlyPlayingPosition = position;
-
-        if (adapter != null) {
-            adapter.setCurrentlyPlayingPosition(position);
-            adapter.notifyDataSetChanged();
-        }
-
-        startActivityForResult(intent, PLAYER_ACTIVITY_REQUEST_CODE);
-    }
-
-
 }
