@@ -68,18 +68,17 @@ It offers a **buttery-smooth UI**, **powerful controls**, and **real-time synchr
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/167765f1-833c-47f0-9832-a9f124e7f28a" width="22%" />
-  <img src="https://github.com/user-attachments/assets/9124286e-3777-46f3-8d95-e3be08767281" width="22%" />
-  <img src="https://github.com/user-attachments/assets/613cf586-d894-4d65-9921-d55c9dde11d1" width="22%" />
   <img src="https://github.com/user-attachments/assets/954eaa24-2973-4ed8-bac0-b997515535a4" width="22%" />
+  <img src="https://github.com/user-attachments/assets/613cf586-d894-4d65-9921-d55c9dde11d1" width="22%" />
+  <img src="https://github.com/user-attachments/assets/9124286e-3777-46f3-8d95-e3be08767281" width="22%" />
 </p>
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/5e28c7db-4a23-4350-9d5d-d1de6b069dca" width="22%" />
   <img src="https://github.com/user-attachments/assets/61fdd1e6-b15b-4f5a-a472-e864bcdc80aa" width="22%" />
+  <img src="https://github.com/user-attachments/assets/5e28c7db-4a23-4350-9d5d-d1de6b069dca" width="22%" />
   <img src="https://github.com/user-attachments/assets/096c0d83-304a-4051-bdf4-3954ae3ec27b" width="22%" />
   <img src="https://github.com/user-attachments/assets/96aab8aa-8d74-4bb3-97e3-319f7df4218f" width="22%" />
 </p>
-
 
 ---
 
