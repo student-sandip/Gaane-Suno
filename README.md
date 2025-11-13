@@ -65,7 +65,7 @@ It offers a **buttery-smooth UI**, **powerful controls**, and **real-time synchr
 ---
 
 <p align="center"> <!-- 1st Row --> <img src="https://github.com/user-attachments/assets/fab55a57-49dc-4c2b-9dff-f814a6e4eccc" width="22%" /> <img src="https://github.com/user-attachments/assets/61e62f91-d5af-46a7-a0a4-4ae804020b92" width="22%" /> <img src="https://github.com/user-attachments/assets/0431bc0d-fe80-4ff7-8a92-8a5c211aa4c0" width="22%" /> <img src="https://github.com/user-attachments/assets/68b26539-f23b-4267-ae44-f7ce28f5f0ed" width="22%" /> </p> <p align="center"> <!-- 2nd Row --> <img src="https://github.com/user-attachments/assets/c2156470-932a-4420-be59-5b32cc928f4d" width="22%" /> <img src="https://github.com/user-attachments/assets/3cab9da7-d853-4a13-8843-8b843d7595b5" width="22%" /> <img src="https://github.com/user-attachments/assets/4ba5db45-4f63-41e0-b171-ac4665330dd0" width="22%" /> <img src="https://github.com/user-attachments/assets/5a5c255a-64a8-44f0-bef3-2893e905fff2" width="22%" /> </p>
-**Theres also many more functionalities in the app,,, once you visit you will see those all features.**
+**There are also many more functionalities in the app — once you visit, you will see all those features.**
 
 ---
 
@@ -110,7 +110,7 @@ It offers a **buttery-smooth UI**, **powerful controls**, and **real-time synchr
 Thank you for checking out **GaaneSuno**!  
 It’s more than just a music player — it’s a blend of art, technology, and user love ❤️  
 
-💻 **Developed with passion by [Sandip Saha](https://student-sandip.github.io/MyFolio/)**
-If you liked this project, don’t forget to ⭐ **star the repo** and share your feedback!  
+💻 **Developed with passion by [Sandip Saha](https://student-sandip.github.io/MyFolio/)**  
+If you liked this project, don’t forget to ⭐ **star the repo** and share your feedback!
 
 > “Music is not just heard, it’s *felt* — and GaaneSuno brings that feeling alive.” 🎶  
