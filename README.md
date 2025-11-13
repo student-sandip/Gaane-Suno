@@ -66,8 +66,8 @@ It offers a **buttery-smooth UI**, **powerful controls**, and **real-time synchr
 
 ## 🖼️ Screenshots
 
-_Coming Soon..._  
-(Add preview images of **MainActivity**, **PlayerActivity**, **Online Music**, and **Favorites**)
+![1st one](https://github.com/user-attachments/assets/167765f1-833c-47f0-9832-a9f124e7f28a)
+
 
 ---
 
