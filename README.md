@@ -67,6 +67,20 @@ It offers a **buttery-smooth UI**, **powerful controls**, and **real-time synchr
 ## 🖼️ Screenshots
 
 ![1st one](https://github.com/user-attachments/assets/167765f1-833c-47f0-9832-a9f124e7f28a)
+![2nd ](https://github.com/user-attachments/assets/9124286e-3777-46f3-8d95-e3be08767281)
+![2nd (a)](https://github.com/user-attachments/assets/613cf586-d894-4d65-9921-d55c9dde11d1)
+![3rd ](https://github.com/user-attachments/assets/954eaa24-2973-4ed8-bac0-b997515535a4)
+![4th ](https://github.com/user-attachments/assets/5e28c7db-4a23-4350-9d5d-d1de6b069dca)
+![4th ()a](https://github.com/user-attachments/assets/61fdd1e6-b15b-4f5a-a472-e864bcdc80aa)
+![5th](https://github.com/user-attachments/assets/096c0d83-304a-4051-bdf4-3954ae3ec27b)
+![6th](https://github.com/user-attachments/assets/96aab8aa-8d74-4bb3-97e3-319f7df4218f)
+
+
+
+
+
+
+
 
 
 ---
