@@ -16,6 +16,7 @@ import android.widget.TextView;
 import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -63,6 +64,11 @@ public class SongAdapter extends BaseAdapter {
         return position;
     }
 
+    @Override
+    public boolean hasStableIds() {
+        return true;
+    }
+
     private static class ViewHolder {
         ImageView thumbnail;
         TextView title;
@@ -88,31 +94,39 @@ public class SongAdapter extends BaseAdapter {
         }
 
         Song song = songs.get(position);
-        holder.title.setText(song.getTitle());
-        holder.artist.setText(song.getArtist());
+
+        holder.title.setText(song.getTitle() != null ? song.getTitle() : "Unknown Title");
+        holder.artist.setText(song.getArtist() != null ? song.getArtist() : "Unknown Artist");
 
         holder.title.setSelected(true);
         holder.artist.setSelected(true);
 
+        // ✅ Safe Glide loading (no crash even if null/invalid URI)
         String albumArtUri = song.getAlbumArtUri();
-        if (albumArtUri != null && !albumArtUri.isEmpty()) {
-            Glide.with(context)
-                    .load(Uri.parse(albumArtUri))
-                    .placeholder(R.drawable.ic_album_art)
-                    .error(R.drawable.ic_album_art)
-                    .into(holder.thumbnail);
+        if (albumArtUri != null && !albumArtUri.trim().isEmpty()) {
+            try {
+                Glide.with(context)
+                        .load(Uri.parse(albumArtUri))
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .placeholder(R.drawable.ic_album_placeholder)
+                        .error(R.drawable.ic_album_placeholder)
+                        .into(holder.thumbnail);
+            } catch (Exception e) {
+                holder.thumbnail.setImageResource(R.drawable.ic_album_placeholder);
+            }
         } else {
-            holder.thumbnail.setImageResource(R.drawable.ic_album_art);
+            holder.thumbnail.setImageResource(R.drawable.ic_album_placeholder);
         }
 
+        // ✅ Highlight currently playing song
         if (position == currentlyPlayingPosition) {
             holder.title.setTextColor(Color.parseColor("#FF5722"));
             holder.artist.setTextColor(Color.parseColor("#FF5722"));
             holder.title.setTypeface(null, Typeface.BOLD);
             holder.artist.setTypeface(null, Typeface.BOLD);
-            holder.title.setPaintFlags(holder.title.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
-            holder.artist.setPaintFlags(holder.artist.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
-            convertView.setBackgroundColor(ContextCompat.getColor(context, R.color.songPlayingBackground));
+//            holder.title.setPaintFlags(holder.title.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+//            holder.artist.setPaintFlags(holder.artist.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+//            convertView.setBackground(ContextCompat.getDrawable(context, R.drawable.list_item_bg_highlight));
         } else {
             holder.title.setTextColor(Color.WHITE);
             holder.artist.setTextColor(Color.GRAY);
@@ -120,16 +134,16 @@ public class SongAdapter extends BaseAdapter {
             holder.artist.setTypeface(null, Typeface.NORMAL);
             holder.title.setPaintFlags(holder.title.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG));
             holder.artist.setPaintFlags(holder.artist.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG));
-            convertView.setBackgroundColor(Color.TRANSPARENT);
+            convertView.setBackground(ContextCompat.getDrawable(context, R.drawable.list_item_bg));
         }
 
+        // ✅ Selection mode checkboxes
         if (isSelectionMode) {
             holder.checkbox.setVisibility(View.VISIBLE);
             holder.checkbox.setChecked(selectedItems.contains(position));
         } else {
             holder.checkbox.setVisibility(View.GONE);
         }
-
 
         return convertView;
     }

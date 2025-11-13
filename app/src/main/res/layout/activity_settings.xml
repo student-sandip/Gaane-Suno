@@ -411,7 +411,7 @@
                         android:id="@+id/settings_version_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="App version 1.0.0"
+                        android:text="App version 1.5.0"
                         android:textColor="#AAAAAA"
                         android:textSize="13sp" />
 

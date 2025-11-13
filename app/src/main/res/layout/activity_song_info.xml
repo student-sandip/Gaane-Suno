@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212"
+    android:background="#101010"
     tools:context=".SongInfoActivity">
 
     <!-- Header -->
@@ -11,141 +11,175 @@
         android:id="@+id/headerLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#E65100"
+        android:background="#FF6F00"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingTop="@dimen/_29sdp"
-        android:paddingBottom="@dimen/_15sdp"
-        android:paddingStart="@dimen/_16sdp"
-        android:paddingEnd="@dimen/_16sdp">
+        android:paddingStart="@dimen/_14sdp"
+        android:paddingEnd="@dimen/_16sdp"
+        android:paddingTop="@dimen/_28sdp"
+        android:paddingBottom="@dimen/_16sdp"
+        android:elevation="6dp">
 
         <ImageView
             android:id="@+id/backButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:contentDescription="Back"
-            android:padding="@dimen/_14sdp"
-            android:src="@drawable/ic_back" />
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:src="@drawable/ic_back"
+            android:tint="#FFFFFF"
+            android:contentDescription="Back" />
 
         <TextView
             android:id="@+id/songInfoTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/_1sdp"
+            android:layout_marginStart="8dp"
             android:text="Song Info"
             android:textColor="#FFFFFF"
-            android:textSize="@dimen/_22ssp"
+            android:textSize="20sp"
             android:textStyle="bold" />
     </LinearLayout>
 
     <!-- Scrollable Info -->
     <ScrollView
-        android:id="@+id/contentScroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/headerLayout"
-        android:layout_marginTop="@dimen/_10sdp"
-        android:padding="@dimen/_16sdp">
+        android:padding="@dimen/_18sdp"
+        android:layout_marginTop="@dimen/_6sdp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:dividerPadding="8dp"
+            android:showDividers="middle">
 
+            <!-- Section reusable style -->
             <TextView
-                android:text="Title:"
+                android:text="Title"
                 android:textStyle="bold"
-                android:textSize="@dimen/_16ssp"
+                android:textSize="16sp"
                 android:textColor="#FFFFFF"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/_12sdp" />
+                android:layout_marginTop="12dp" />
 
             <TextView
                 android:id="@+id/infoTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Unknown Title"
-                android:textSize="@dimen/_12ssp"
-                android:textColor="#DDDDDD" />
+                android:textSize="14sp"
+                android:textColor="#DDDDDD"
+                android:layout_marginTop="2dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="10dp"
+                android:background="#222" />
 
             <TextView
-                android:text="Artist:"
+                android:text="Artist"
                 android:textStyle="bold"
-                android:textSize="@dimen/_16ssp"
+                android:textSize="16sp"
                 android:textColor="#FFFFFF"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/_12sdp" />
+                android:layout_marginTop="14dp" />
 
             <TextView
                 android:id="@+id/infoArtist"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Unknown Artist"
-                android:textSize="@dimen/_12ssp"
-                android:textColor="#DDDDDD" />
+                android:textSize="14sp"
+                android:textColor="#DDDDDD"
+                android:layout_marginTop="2dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="10dp"
+                android:background="#222" />
 
             <TextView
-                android:text="Album:"
+                android:text="Album"
                 android:textStyle="bold"
-                android:textSize="@dimen/_16ssp"
+                android:textSize="16sp"
                 android:textColor="#FFFFFF"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/_12sdp" />
+                android:layout_marginTop="14dp" />
 
             <TextView
                 android:id="@+id/infoAlbum"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Unknown Album"
-                android:textSize="@dimen/_12ssp"
-                android:textColor="#DDDDDD" />
+                android:textSize="14sp"
+                android:textColor="#DDDDDD"
+                android:layout_marginTop="2dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="10dp"
+                android:background="#222" />
 
             <TextView
-                android:text="Duration:"
+                android:text="Duration"
                 android:textStyle="bold"
-                android:textSize="@dimen/_16ssp"
+                android:textSize="16sp"
                 android:textColor="#FFFFFF"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/_12sdp" />
+                android:layout_marginTop="14dp" />
 
             <TextView
                 android:id="@+id/infoDuration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0:00"
-                android:textSize="@dimen/_12ssp"
-                android:textColor="#DDDDDD" />
+                android:textSize="14sp"
+                android:textColor="#DDDDDD"
+                android:layout_marginTop="2dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="10dp"
+                android:background="#222" />
 
             <TextView
-                android:text="File Path:"
+                android:text="Source / File Path"
                 android:textStyle="bold"
-                android:textSize="@dimen/_16ssp"
+                android:textSize="16sp"
                 android:textColor="#FFFFFF"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/_12sdp" />
+                android:layout_marginTop="14dp" />
 
             <TextView
                 android:id="@+id/infoPath"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="storage/emulated/0/Music/song.mp3"
-                android:textSize="@dimen/_12ssp"
+                android:textSize="14sp"
                 android:textColor="#DDDDDD"
-                android:layout_marginBottom="@dimen/_32sdp" />
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="32dp"
+                android:autoLink="web" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/_48sdp"
+                android:layout_marginTop="40dp"
                 android:gravity="center"
                 android:text="© 2025 GaanaSuno. All rights reserved."
                 android:textColor="#888888"
-                android:textSize="@dimen/_12ssp" />
+                android:textSize="12sp" />
         </LinearLayout>
     </ScrollView>
 </RelativeLayout>

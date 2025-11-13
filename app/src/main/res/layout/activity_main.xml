@@ -1,137 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mainLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212"
-    android:orientation="vertical"
-    android:padding="@dimen/_20sdp"
-    tools:context=".MainActivity">
+    android:background="#101010">
 
-    <!-- 🔶 Selection Toolbar -->
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/_22sdp"
-        android:background="#E65100"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-        android:visibility="gone"
-        app:title="Gaane Suno"
-        app:titleTextColor="#FFFFFF">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="@dimen/_3sdp"
-        android:paddingEnd="@dimen/_5sdp"
-        android:paddingTop="@dimen/_7sdp"
-        android:paddingBottom="@dimen/_7sdp">
-
-        <ImageButton
-            android:id="@+id/btnCloseSelection"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_close"
-            android:layout_marginEnd="@dimen/_5sdp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Close"
-            app:tint="#FFFFFF" />
-
-        <TextView
-            android:id="@+id/tvSelectedCount"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="0 selected"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:gravity="start|center_vertical" />
-
-        <ImageButton
-            android:id="@+id/btnInfoSelection"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_info"
-            android:layout_marginEnd="@dimen/_18sdp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Info"
-            app:tint="#FFFFFF" />
-
-        <ImageButton
-            android:id="@+id/btnPlaySelection"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_play"
-            android:layout_marginEnd="@dimen/_18sdp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Play"
-            app:tint="#FFFFFF" />
-
-        <ImageButton
-            android:id="@+id/btnShareSelection"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_share"
-            android:layout_marginEnd="@dimen/_18sdp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Share"
-            app:tint="#FFFFFF" />
-
-        <ImageButton
-            android:id="@+id/btnDeleteSelection"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_delete"
-            android:layout_marginEnd="@dimen/_5sdp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Delete"
-            app:tint="#FFFFFF" />
-    </LinearLayout>
-</androidx.appcompat.widget.Toolbar>
-
-
-    <!-- 🔷 App Title Bar -->
+    <!-- 🔶 Header -->
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/headerLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/_16sdp">
+        android:background="#101010"
+        android:paddingStart="@dimen/_15sdp"
+        android:paddingEnd="@dimen/_15sdp"
+        android:paddingTop="@dimen/_29sdp"
+        android:paddingBottom="@dimen/_10sdp">
 
         <TextView
             android:id="@+id/appTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Gaane Suno"
+            android:text="Local Music"
             android:textColor="#FFFFFF"
             android:textSize="@dimen/_20sdp"
             android:textStyle="bold"
+            android:ellipsize="end"
             android:gravity="start"
             android:maxLines="1"
-            android:ellipsize="end"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/btnSettings"
-            app:layout_constraintHorizontal_bias="0" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageButton
             android:id="@+id/btnSearch"
             android:layout_width="@dimen/_25sdp"
             android:layout_height="@dimen/_35sdp"
-            android:layout_marginEnd="8dp"
+            android:layout_marginEnd="@dimen/_8sdp"
             android:background="@android:color/transparent"
             android:contentDescription="Search"
             android:padding="0dp"
             android:src="@drawable/ic_search"
-            app:layout_constraintTop_toTopOf="@id/appTitle"
-            app:layout_constraintBottom_toBottomOf="@id/appTitle"
             app:layout_constraintEnd_toStartOf="@id/btnSettings"
+            app:layout_constraintBottom_toBottomOf="@id/appTitle"
+            app:layout_constraintTop_toTopOf="@id/appTitle"
             app:tint="#FFFFFF" />
 
         <ImageButton
@@ -142,41 +55,125 @@
             android:contentDescription="Settings"
             android:padding="0dp"
             android:src="@drawable/ic_settings"
-            app:layout_constraintBottom_toBottomOf="@id/appTitle"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/appTitle"
             app:layout_constraintTop_toTopOf="@id/appTitle"
             app:tint="#FFFFFF" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <!-- 🔸 Selection Toolbar -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_below="@id/headerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#E65100"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        android:visibility="gone"
+        app:titleTextColor="#FFFFFF">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingVertical="@dimen/_5sdp"
+            android:paddingHorizontal="@dimen/_5sdp">
+
+            <ImageButton
+                android:id="@+id/btnCloseSelection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/_8sdp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_close"
+                app:tint="#FFFFFF" />
+
+            <TextView
+                android:id="@+id/tvSelectedCount"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="0 selected"
+                android:textColor="#FFFFFF"
+                android:textSize="@dimen/_13ssp" />
+
+            <ImageButton
+                android:id="@+id/btnInfoSelection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/_12sdp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_info"
+                app:tint="#FFFFFF" />
+
+            <ImageButton
+                android:id="@+id/btnPlaySelection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/_12sdp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_play"
+                app:tint="#FFFFFF" />
+
+            <ImageButton
+                android:id="@+id/btnShareSelection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/_12sdp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_share"
+                app:tint="#FFFFFF" />
+
+            <ImageButton
+                android:id="@+id/btnDeleteSelection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_delete"
+                app:tint="#FFFFFF" />
+        </LinearLayout>
+    </androidx.appcompat.widget.Toolbar>
+
     <!-- 🔸 Song List -->
     <ListView
         android:id="@+id/songListView"
+        android:layout_below="@id/toolbar"
+        android:layout_above="@id/bottomNav"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:divider="#444444"
-        android:dividerHeight="@dimen/_1sdp"
-        android:paddingStart="@dimen/_1sdp"
-        android:paddingEnd="@dimen/_1sdp"
-        android:paddingTop="@dimen/_8sdp"
-        android:paddingBottom="@dimen/_8sdp"
-        android:scrollbars="vertical" />
+        android:layout_height="match_parent"
+        android:padding="@dimen/_8sdp"
+        android:divider="@null"
+        android:dividerHeight="0dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical"
+        android:overScrollMode="always"
+        android:fadingEdge="vertical"
+        android:background="#101010"/>
 
-    <!-- 🔻 Footer -->
-    <FrameLayout
+    <!-- 🟠 Floating Button -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabNowPlaying"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_above="@id/bottomNav"
+        android:layout_marginEnd="@dimen/_20sdp"
+        android:layout_marginBottom="@dimen/_10sdp"
+        android:src="@drawable/ic_music_note"
+        android:contentDescription="Now Playing"
+        app:backgroundTint="#E65100"
+        app:tint="#FFFFFF" />
+
+    <!-- 🔸 Bottom Navigation -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="@dimen/_12sdp"
-        android:paddingBottom="@dimen/_12sdp">
+        android:layout_alignParentBottom="true"
+        android:background="#1E1E1E"
+        app:itemIconTint="@color/white"
+        app:itemTextColor="@color/white"
+        app:menu="@menu/bottom_nav_menu" />
 
-        <TextView
-            android:id="@+id/footer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="© 2025 Gaane Suno. All rights reserved."
-            android:textColor="#888888"
-            android:textSize="@dimen/_12ssp" />
-    </FrameLayout>
-
-</LinearLayout>
+</RelativeLayout>

@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="horizontal"
-    android:gravity="center_vertical"
-    android:padding="@dimen/_8sdp"
-    android:layout_marginStart="@dimen/_6sdp"
-    android:layout_marginEnd="@dimen/_6sdp"
-    android:layout_marginBottom="@dimen/_8sdp"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#101010">
+    android:orientation="horizontal"
+    android:padding="@dimen/_10sdp"
+    android:layout_marginBottom="@dimen/_2sdp"
+    android:layout_marginStart="@dimen/_6sdp"
+    android:layout_marginEnd="@dimen/_6sdp">
 
-    <!-- 🎵 Album Art -->
+    <!-- 🎵 Song Image (Rounded) -->
     <ImageView
-        android:id="@+id/albumArt"
-        android:layout_width="@dimen/_33sdp"
-        android:layout_height="@dimen/_33sdp"
-        android:layout_marginEnd="@dimen/_8sdp"
+        android:id="@+id/songImage"
+        android:layout_width="@dimen/_36sdp"
+        android:layout_height="@dimen/_36sdp"
         android:scaleType="centerCrop"
         android:src="@drawable/ic_album_placeholder"
-        android:background="@drawable/image_bg_rounded"
-        android:clipToOutline="true" />
+        android:contentDescription="@string/app_name"
+        android:clipToOutline="true"
+        android:background="@drawable/image_bg_rounded_online"
+        android:layout_marginEnd="@dimen/_10sdp" />
 
-    <!-- 🎶 Song Info -->
+    <!-- 🎶 Song Title + Artist -->
     <LinearLayout
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_weight="1"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:gravity="center_vertical">
 
         <!-- Song Title -->
         <TextView
@@ -40,6 +40,8 @@
             android:ellipsize="marquee"
             android:marqueeRepeatLimit="marquee_forever"
             android:scrollHorizontally="true"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
             android:singleLine="true"
             android:autoSizeTextType="uniform"
             android:autoSizeMinTextSize="10sp"
@@ -47,8 +49,7 @@
             android:autoSizeStepGranularity="1sp"
             android:paddingTop="@dimen/_2sdp"
             android:paddingBottom="@dimen/_1sdp"
-            android:freezesText="true"
-            android:includeFontPadding="false" />
+            android:freezesText="true" />
 
         <!-- Artist Name -->
         <TextView
@@ -60,24 +61,16 @@
             android:ellipsize="marquee"
             android:marqueeRepeatLimit="marquee_forever"
             android:scrollHorizontally="true"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
             android:singleLine="true"
             android:autoSizeTextType="uniform"
             android:autoSizeMinTextSize="9sp"
             android:autoSizeMaxTextSize="13sp"
             android:autoSizeStepGranularity="1sp"
             android:paddingBottom="@dimen/_3sdp"
-            android:freezesText="true"
-            android:includeFontPadding="false" />
-    </LinearLayout>
+            android:freezesText="true" />
 
-    <!-- ✅ Checkbox -->
-    <CheckBox
-        android:id="@+id/songCheckbox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:buttonTint="#FF6F00"
-        android:focusable="false"
-        android:focusableInTouchMode="false"
-        android:layout_marginStart="@dimen/_6sdp" />
+    </LinearLayout>
 
 </LinearLayout>

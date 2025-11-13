@@ -21,6 +21,8 @@ import android.text.TextWatcher;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -34,7 +36,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -52,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Toolbar selectionToolbar;
     private TextView tvSelectedCount;
-    private ImageButton btnCloseSelection, btnPlaySelection, btnShareSelection, btnDeleteSelection;
+    private ImageButton btnCloseSelection, btnShareSelection, btnDeleteSelection;
 
     private Set<Integer> selectedItems = new HashSet<>();
     private boolean isSelectionMode = false;
@@ -79,7 +86,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Set up toolbar properly
+        View rootView = findViewById(R.id.mainLayout);
+        Animation loadAnim = AnimationUtils.loadAnimation(this, R.anim.slide_in_up_fade);
+        rootView.startAnimation(loadAnim);
+
+        // Toolbar setup
         selectionToolbar = findViewById(R.id.toolbar);
         setSupportActionBar(selectionToolbar);
         selectionToolbar.setVisibility(View.GONE);
@@ -90,11 +101,81 @@ public class MainActivity extends AppCompatActivity {
         // Toolbar buttons
         tvSelectedCount = findViewById(R.id.tvSelectedCount);
         btnCloseSelection = findViewById(R.id.btnCloseSelection);
-        btnPlaySelection = findViewById(R.id.btnPlaySelection);
         btnShareSelection = findViewById(R.id.btnShareSelection);
         btnDeleteSelection = findViewById(R.id.btnDeleteSelection);
 
+        // Remove info & play buttons
+        findViewById(R.id.btnPlaySelection).setVisibility(View.GONE);
+        findViewById(R.id.btnInfoSelection).setVisibility(View.GONE);
+
         btnCloseSelection.setOnClickListener(v -> exitSelectionMode());
+
+        // SHARE button action
+        btnShareSelection.setOnClickListener(v -> {
+            if (selectedItems.isEmpty()) {
+                Toast.makeText(MainActivity.this, "No song selected!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            ArrayList<Uri> uris = new ArrayList<>();
+            for (int pos : selectedItems) {
+                Song song = songsList.get(pos);
+                File file = new File(song.getPath());
+                if (file.exists()) {
+                    Uri uri = FileProvider.getUriForFile(MainActivity.this,
+                            getPackageName() + ".provider", file);
+                    uris.add(uri);
+                }
+            }
+
+            if (uris.isEmpty()) {
+                Toast.makeText(MainActivity.this, "No valid song file found!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Intent shareIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+            shareIntent.setType("audio/*");
+            shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(shareIntent, "Share via"));
+            exitSelectionMode();
+        });
+
+        // DELETE button action
+        btnDeleteSelection.setOnClickListener(v -> {
+            if (selectedItems.isEmpty()) {
+                Toast.makeText(MainActivity.this, "No song selected!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("Delete selected song(s)")
+                    .setMessage("Are you sure you want to delete the selected song(s)?")
+                    .setPositiveButton("Delete", (dialog, which) -> {
+                        ArrayList<Song> toRemove = new ArrayList<>();
+                        boolean currentlyPlayingDeleted = false;
+                        for (int pos : selectedItems) {
+                            if (pos == MusicState.currentlyPlayingPosition) {
+                                currentlyPlayingDeleted = true;
+                            }
+                            Song song = songsList.get(pos);
+                            File file = new File(song.getPath());
+                            if (file.exists()) {
+                                file.delete();
+                            }
+                            toRemove.add(song);
+                        }
+                        if (currentlyPlayingDeleted) {
+                            Intent stopIntent = new Intent(MainActivity.this, MusicService.class);
+                            stopService(stopIntent);
+                        }
+                        songsList.removeAll(toRemove);
+                        adapter.notifyDataSetChanged();
+                        Toast.makeText(MainActivity.this, "Deleted successfully", Toast.LENGTH_SHORT).show();
+                        exitSelectionMode();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
 
         songListView.setOnItemClickListener((parent, view, pos, id) -> {
             if (isSelectionMode) {
@@ -125,23 +206,71 @@ public class MainActivity extends AppCompatActivity {
             requestPermission();
         }
 
-        // Make status bar black
+        // Status bar black
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             Window window = getWindow();
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             window.setStatusBarColor(ContextCompat.getColor(this, R.color.black));
         }
+
+        FloatingActionButton fabNowPlaying = findViewById(R.id.fabNowPlaying);
+        fabNowPlaying.setOnClickListener(v -> {
+            if (MusicState.songList != null && !MusicState.songList.isEmpty()) {
+                Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
+                intent.putExtra("songsList", (Serializable) MusicState.songList);
+                intent.putExtra("position", MusicState.currentlyPlayingPosition);
+                intent.putExtra("resumePlayback", true);
+                startActivity(intent);
+            } else {
+                Toast.makeText(this, "No song is currently playing", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_offline) {
+                if (!(this instanceof MainActivity)) {
+                    Intent intent = new Intent(this, MainActivity.class);
+                    startActivity(intent);
+                    finish();
+                }
+                return true;
+            } else if (id == R.id.nav_online) {
+                Intent intent = new Intent(MainActivity.this, OnlineActivity.class);
+                startActivity(intent);
+                overridePendingTransition(R.anim.slide_in_up_fade, R.anim.slide_out_down_fade);
+                finish();
+                return true;
+            }  else if (id == R.id.nav_favorite) {
+                Intent favIntent = new Intent(this, FavoritesActivity.class);
+                startActivity(favIntent);
+                overridePendingTransition(R.anim.slide_in_up_fade, R.anim.slide_out_down_fade);
+                return true;
+            }
+
+            return false;
+        });
     }
+
+//    @Override
+//    public void onBackPressed() {
+//        if (isSelectionMode) {
+//            exitSelectionMode();
+//        } else {
+//            super.onBackPressed();
+//        }
+//    }
 
     @Override
     public void onBackPressed() {
-        if (isSelectionMode) {
-            exitSelectionMode();
-        } else {
-            super.onBackPressed();
-        }
+        super.onBackPressed();
+        finishAffinity();
     }
+
+
     private void enterSelectionMode() {
         isSelectionMode = true;
         selectedItems.clear();
@@ -153,8 +282,8 @@ public class MainActivity extends AppCompatActivity {
         selectedItems.clear();
 
         if (adapter != null) {
-            adapter.setSelectedItems(selectedItems); // ⬅️ Very important
-            adapter.notifyDataSetChanged();          // ⬅️ Force UI update
+            adapter.setSelectedItems(selectedItems);
+            adapter.notifyDataSetChanged();
         }
 
         selectionToolbar.setVisibility(View.GONE);
@@ -307,6 +436,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         startActivityForResult(intent, PLAYER_ACTIVITY_REQUEST_CODE);
+        overridePendingTransition(R.anim.slide_in_up_fade, R.anim.slide_out_down_fade);
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")

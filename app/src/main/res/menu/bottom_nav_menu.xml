@@ -1,0 +1,14 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_offline"
+        android:icon="@drawable/ic_music_note"
+        android:title="Offline" />
+    <item
+        android:id="@+id/nav_online"
+        android:icon="@drawable/ic_online"
+        android:title="Online" />
+    <item
+        android:id="@+id/nav_favorite"
+        android:icon="@drawable/ic_favorite"
+        android:title="Favorites" />
+</menu>
