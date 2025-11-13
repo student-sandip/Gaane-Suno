@@ -64,24 +64,7 @@ It offers a **buttery-smooth UI**, **powerful controls**, and **real-time synchr
 
 ---
 
-## 🖼️ Screenshots
-
-<p align="center">
-  <!-- 1st Row -->
-  <img src="https://github.com/user-attachments/assets/167765f1-833c-47f0-9832-a9f124e7f28a" width="22%" />
-  <img src="https://github.com/user-attachments/assets/954eaa24-2973-4ed8-bac0-b997515535a4" width="22%" />
-  <img src="https://github.com/user-attachments/assets/61fdd1e6-b15b-4f5a-a472-e864bcdc80aa" width="22%" /> <!-- 6th image moved up -->
-  <img src="https://github.com/user-attachments/assets/613cf586-d894-4d65-9921-d55c9dde11d1" width="22%" /> <!-- 3rd image moved up -->
-</p>
-
-<p align="center">
-  <!-- 2nd Row -->
-  <img src="https://github.com/user-attachments/assets/9124286e-3777-46f3-8d95-e3be08767281" width="22%" />
-  <img src="https://github.com/user-attachments/assets/5e28c7db-4a23-4350-9d5d-d1de6b069dca" width="22%" />
-  <img src="https://github.com/user-attachments/assets/096c0d83-304a-4051-bdf4-3954ae3ec27b" width="22%" />
-  <img src="https://github.com/user-attachments/assets/96aab8aa-8d74-4bb3-97e3-319f7df4218f" width="22%" />
-</p>
-
+<p align="center"> <!-- 1st Row --> <img src="https://github.com/user-attachments/assets/fab55a57-49dc-4c2b-9dff-f814a6e4eccc" width="22%" /> <img src="https://github.com/user-attachments/assets/61e62f91-d5af-46a7-a0a4-4ae804020b92" width="22%" /> <img src="https://github.com/user-attachments/assets/0431bc0d-fe80-4ff7-8a92-8a5c211aa4c0" width="22%" /> <img src="https://github.com/user-attachments/assets/68b26539-f23b-4267-ae44-f7ce28f5f0ed" width="22%" /> </p> <p align="center"> <!-- 2nd Row --> <img src="https://github.com/user-attachments/assets/c2156470-932a-4420-be59-5b32cc928f4d" width="22%" /> <img src="https://github.com/user-attachments/assets/3cab9da7-d853-4a13-8843-8b843d7595b5" width="22%" /> <img src="https://github.com/user-attachments/assets/4ba5db45-4f63-41e0-b171-ac4665330dd0" width="22%" /> <img src="https://github.com/user-attachments/assets/5a5c255a-64a8-44f0-bef3-2893e905fff2" width="22%" /> </p>
 
 ---
 
