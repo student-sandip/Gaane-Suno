@@ -1,6 +1,5 @@
 package com.example.gaanesuno;
 
-import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -13,7 +12,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.content.ContextCompat;
+
 import com.bumptech.glide.Glide;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
 import java.util.ArrayList;
 
 public class FavoritesAdapter extends BaseAdapter {
@@ -91,13 +94,13 @@ public class FavoritesAdapter extends BaseAdapter {
 
         // ✅ Highlight current playing song (like offline)
         if (position == highlightedIndex) {
-            holder.songTitle.setTextColor(Color.parseColor("#FF5722"));
-            holder.songArtist.setTextColor(Color.parseColor("#FF5722"));
+            holder.songTitle.setTextColor(ContextCompat.getColor(context, R.color.orange_accent));
+            holder.songArtist.setTextColor(ContextCompat.getColor(context, R.color.orange_accent));
             holder.songTitle.setTypeface(null, Typeface.BOLD);
             holder.songArtist.setTypeface(null, Typeface.BOLD);
         } else {
-            holder.songTitle.setTextColor(Color.parseColor("#FFFFFF"));
-            holder.songArtist.setTextColor(Color.parseColor("#B3B3B3"));
+            holder.songTitle.setTextColor(ContextCompat.getColor(context, R.color.favorite_item_title));
+            holder.songArtist.setTextColor(ContextCompat.getColor(context, R.color.favorite_item_artist));
             holder.songTitle.setTypeface(null, Typeface.NORMAL);
             holder.songArtist.setTypeface(null, Typeface.NORMAL);
         }
@@ -108,7 +111,7 @@ public class FavoritesAdapter extends BaseAdapter {
         // ✅ Remove favorite with confirmation
         holder.removeBtn.setImageResource(R.drawable.ic_heart_filled); // Initially filled heart
         holder.removeBtn.setOnClickListener(v -> {
-            new AlertDialog.Builder(context)
+            new MaterialAlertDialogBuilder(context)
                     .setTitle("Remove Favorite")
                     .setMessage("Are you sure you want to remove this song from favorites?")
                     .setPositiveButton("Yes", (dialog, which) -> {

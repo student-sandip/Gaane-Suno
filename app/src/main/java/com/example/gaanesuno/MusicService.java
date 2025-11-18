@@ -4,10 +4,12 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Binder;
@@ -24,7 +26,8 @@ import java.io.IOException;
 import java.util.Random;
 
 import android.media.audiofx.LoudnessEnhancer;
-public class MusicService extends Service {
+
+public class MusicService extends Service implements AudioManager.OnAudioFocusChangeListener {
 
     private LoudnessEnhancer loudnessEnhancer;
     public static final String ACTION_PLAY_PAUSE = "com.example.gaanesuno.ACTION_PLAY_PAUSE";
@@ -37,12 +40,14 @@ public class MusicService extends Service {
 
     private final IBinder binder = new MusicBinder();
     private MediaPlayer mediaPlayer;
-    private String currentPath = "";
     private Song currentSong;
     private MediaSessionCompat mediaSession;
+    private AudioManager audioManager;
 
     private boolean isShuffle = false;
     private boolean isRepeat = false;
+    private int resumePosition = 0; // To store position on audio focus loss
+    private boolean pausedByFocusLoss = false; // Flag to check if pause was due to focus loss
 
     public class MusicBinder extends Binder {
         public MusicService getService() {
@@ -51,9 +56,20 @@ public class MusicService extends Service {
     }
 
     @Nullable
+    public Song getCurrentSong() {
+        return currentSong;
+    }
+
+    @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return binder;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
     }
 
     @Override
@@ -64,7 +80,11 @@ public class MusicService extends Service {
                     playPreviousSongInternal();
                     break;
                 case ACTION_PLAY_PAUSE:
-                    if (isPlaying()) pause(); else resume();
+                    if (isPlaying()) {
+                        pause();
+                    } else {
+                        resume();
+                    }
                     break;
                 case ACTION_NEXT:
                     playNextSongInternal();
@@ -78,55 +98,76 @@ public class MusicService extends Service {
     }
 
     public void playMedia(Song song) {
+        playMedia(song, 0);
+    }
+
+    public void playMedia(Song song, int startPosition) {
         if (song == null) return;
 
-        if (isPlaying() && song.getPath().equals(currentPath)) {
+        // No need to restart if it's the same song and already playing
+        if (isPlaying() && song.equals(currentSong)) {
             return;
         }
 
         stopMedia();
-        try {
-            mediaPlayer = new MediaPlayer();
-            mediaPlayer.setAudioAttributes(new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build());
+        if (requestAudioFocus()) {
+            try {
+                mediaPlayer = new MediaPlayer();
+                mediaPlayer.setAudioAttributes(new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build());
 
-            mediaPlayer.setDataSource(this, Uri.parse(song.getPath()));
-            mediaPlayer.prepare();
-            initLoudnessEnhancer();
-            mediaPlayer.start();
+                mediaPlayer.setDataSource(this, Uri.parse(song.getPath()));
+                mediaPlayer.prepare();
+                initLoudnessEnhancer();
 
-            currentPath = song.getPath();
-            currentSong = song;
-
-            initMediaSession();
-            showNotification(true);
-
-            mediaPlayer.setOnCompletionListener(mp -> {
-                if (isRepeat) {
-                    playMedia(currentSong);
-                } else {
-                    playNextSongInternal();
+                if (startPosition > 0) {
+                    mediaPlayer.seekTo(startPosition);
                 }
-            });
 
-        } catch (IOException e) {
-            e.printStackTrace();
+                mediaPlayer.start();
+                currentSong = song;
+                resumePosition = startPosition;
+
+                initMediaSession();
+                showNotification(true);
+
+                mediaPlayer.setOnCompletionListener(mp -> {
+                    if (isRepeat) {
+                        playMedia(currentSong);
+                    } else {
+                        playNextSongInternal();
+                    }
+                });
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
+
+
     public void pause() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
+            resumePosition = mediaPlayer.getCurrentPosition();
             showNotification(false);
+            // User-initiated pause should not abandon audio focus
         }
     }
+
     public void resume() {
-        if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
-            mediaPlayer.start();
+        if (requestAudioFocus()) {
+            if (mediaPlayer == null && currentSong != null) {
+                playMedia(currentSong, resumePosition);
+            } else if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
+                mediaPlayer.start();
+            }
             showNotification(true);
         }
     }
+
 
     public boolean isPlaying() {
         return mediaPlayer != null && mediaPlayer.isPlaying();
@@ -149,6 +190,7 @@ public class MusicService extends Service {
             mediaPlayer.release();
             mediaPlayer = null;
         }
+        abandonAudioFocus();
     }
 
     public void stop() {
@@ -265,10 +307,25 @@ public class MusicService extends Service {
     private void initMediaSession() {
         mediaSession = new MediaSessionCompat(this, "GaaneSunoMediaSession");
         mediaSession.setCallback(new MediaSessionCompat.Callback() {
-            @Override public void onPlay() { resume(); }
-            @Override public void onPause() { pause(); }
-            @Override public void onSkipToNext() { playNextSongInternal(); }
-            @Override public void onSkipToPrevious() { playPreviousSongInternal(); }
+            @Override
+            public void onPlay() {
+                resume();
+            }
+
+            @Override
+            public void onPause() {
+                pause();
+            }
+
+            @Override
+            public void onSkipToNext() {
+                playNextSongInternal();
+            }
+
+            @Override
+            public void onSkipToPrevious() {
+                playPreviousSongInternal();
+            }
         });
         mediaSession.setActive(true);
     }
@@ -311,5 +368,51 @@ public class MusicService extends Service {
         if (mediaSession != null) {
             mediaSession.release();
         }
+    }
+
+    @Override
+    public void onAudioFocusChange(int focusChange) {
+        switch (focusChange) {
+            case AudioManager.AUDIOFOCUS_GAIN:
+                if (pausedByFocusLoss) {
+                    if (mediaPlayer == null) {
+                        playMedia(currentSong, resumePosition);
+                    } else {
+                        mediaPlayer.start();
+                    }
+                    mediaPlayer.setVolume(1.0f, 1.0f);
+                    pausedByFocusLoss = false;
+                    showNotification(true);
+                }
+                break;
+            case AudioManager.AUDIOFOCUS_LOSS:
+                if (isPlaying()) {
+                    resumePosition = getCurrentPosition();
+                    stopMedia();
+                    pausedByFocusLoss = true;
+                    showNotification(false);
+                }
+                break;
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                if (isPlaying()) {
+                    pause();
+                    pausedByFocusLoss = true;
+                }
+                break;
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                    mediaPlayer.setVolume(0.1f, 0.1f);
+                }
+                break;
+        }
+    }
+
+    private boolean requestAudioFocus() {
+        int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+    }
+
+    private void abandonAudioFocus() {
+        audioManager.abandonAudioFocus(this);
     }
 }

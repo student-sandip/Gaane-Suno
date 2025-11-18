@@ -1,13 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">GaaneSuno</string>
-    <string name="back_button_description" />
-    <string name="remove_ads_icon_description" />
-    <string name="customer_support" />
-    <string name="rating" />
-    <string name="share" />
-    <string name="privacy_policy" />
-    <string name="terms_and_conditions" />
-    <string name="version_check" />
-    <string name="bug_fix" />
-    <string name="album_art">Album Art</string>
+    <string name="search_hint">Search in favorites</string>
+
+    <!-- Settings Screen -->
+    <string name="back_button_description">Back</string>
+    <string name="remove_ads_icon_description">Remove Ads</string>
+    <string name="customer_support">Customer Support</string>
+    <string name="rating">Rate Us</string>
+    <string name="share">Share</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="terms_and_conditions">Terms and Conditions</string>
+    <string name="version_check">Check for Updates</string>
+    <string name="bug_fix">Report a Bug</string>
 </resources>

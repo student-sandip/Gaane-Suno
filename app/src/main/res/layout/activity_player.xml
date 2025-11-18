@@ -98,12 +98,19 @@
     <!-- Artist -->
     <TextView
         android:id="@+id/playerArtist"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/_4sdp"
         android:text="Artist Name"
         android:textColor="#BBBBBB"
         android:textSize="@dimen/_9sdp"
+        android:ellipsize="marquee"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:singleLine="true"
+        android:scrollHorizontally="true"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:gravity="center"
         app:layout_constraintTop_toBottomOf="@id/playerSongTitle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -135,10 +142,10 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/_4sdp"
-        android:paddingHorizontal="@dimen/_8sdp"
-        android:thumb="@drawable/ic_seekbar_thumb"
-        android:progressDrawable="@drawable/ic_seekbar_track"
-        android:thumbTint="#C31D77"
+        android:paddingStart="@dimen/_8sdp"
+        android:paddingEnd="@dimen/_8sdp"
+        android:thumb="@drawable/seekbar_thumb"
+        android:progressDrawable="@drawable/custom_seekbar_progress"
         app:layout_constraintTop_toBottomOf="@id/currentTime"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -249,8 +256,8 @@
             android:layout_weight="1"
             android:max="200"
             android:progress="100"
-            android:progressTint="#E65100"
-            android:thumbTint="#FFFFFF" />
+            android:progressDrawable="@drawable/custom_volume_progress"
+            android:thumb="@drawable/seekbar_thumb" />
 
 <!--        <TextView-->
 <!--            android:id="@+id/volumeText"-->

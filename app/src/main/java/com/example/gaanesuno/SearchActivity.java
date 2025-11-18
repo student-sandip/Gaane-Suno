@@ -78,10 +78,19 @@ public class SearchActivity extends AppCompatActivity {
         });
         resultsRv.setAdapter(resultsAdapter);
 
-        historyAdapter = new HistoryAdapter(this, searchHistory, item -> {
-            etSearch.setText(item);
-            etSearch.setSelection(item.length());
-            performSearch(item);
+        historyAdapter = new HistoryAdapter(this, searchHistory, new HistoryAdapter.OnHistoryInteraction() {
+            @Override
+            public void onHistoryClick(String item) {
+                etSearch.setText(item);
+                etSearch.setSelection(item.length());
+                performSearch(item);
+            }
+
+            @Override
+            public void onArrowClick(String item) {
+                etSearch.setText(item);
+                etSearch.setSelection(item.length());
+            }
         });
         historyRv.setAdapter(historyAdapter);
 
@@ -165,13 +174,14 @@ public class SearchActivity extends AppCompatActivity {
                 if (data != null) {
                     for (int i = 0; i < data.length(); i++) {
                         JSONObject obj = data.getJSONObject(i);
+                        long trackId = obj.optLong("trackId");
                         String title = obj.optString("trackName", "Unknown");
                         String artist = obj.optString("artistName", "Unknown");
                         String imageUrl = obj.optString("artworkUrl100", "");
                         String audioUrl = obj.optString("previewUrl", ""); // 30–90s preview
 
                         if (!audioUrl.isEmpty()) {
-                            temp.add(new OnlineSong(title, artist, imageUrl, audioUrl));
+                            temp.add(new OnlineSong(trackId, title, artist, imageUrl, audioUrl));
                         }
                     }
                 }
@@ -190,7 +200,6 @@ public class SearchActivity extends AppCompatActivity {
             }
         }).start();
     }
-
 
 
     // ---------- History management ----------

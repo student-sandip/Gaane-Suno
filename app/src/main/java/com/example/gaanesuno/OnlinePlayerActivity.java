@@ -1,6 +1,5 @@
 package com.example.gaanesuno;
 
-import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +26,7 @@ import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -68,38 +68,34 @@ public class OnlinePlayerActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             if (intent == null) return;
 
-            // Buffering status
             if (intent.hasExtra("BUFFERING_STATUS")) {
                 boolean isBuffering = intent.getBooleanExtra("BUFFERING_STATUS", false);
                 bufferingProgress.setVisibility(isBuffering ? View.VISIBLE : View.GONE);
             }
 
-            // Song info broadcasted by service (title/artist/image/url)
-            boolean hasTitle = intent.hasExtra("SONG_TITLE");
-            boolean hasArtist = intent.hasExtra("ARTIST_NAME");
-            boolean hasImage = intent.hasExtra("SONG_IMAGE");
-            boolean hasUrl = intent.hasExtra("SONG_URL");
-            boolean hasBitrate = intent.hasExtra("SONG_BITRATE");
+            long trackId = intent.getLongExtra("SONG_TRACK_ID", -1);
+            String title = intent.getStringExtra("SONG_TITLE");
+            String artist = intent.getStringExtra("ARTIST_NAME");
+            String image = intent.getStringExtra("SONG_IMAGE");
+            String url = intent.getStringExtra("SONG_URL");
+            long duration = intent.getLongExtra("SONG_DURATION", 0);
 
-            String title = hasTitle ? intent.getStringExtra("SONG_TITLE") : null;
-            String artist = hasArtist ? intent.getStringExtra("ARTIST_NAME") : null;
-            String image = hasImage ? intent.getStringExtra("SONG_IMAGE") : null;
-            String url = hasUrl ? intent.getStringExtra("SONG_URL") : null;
-            int bitrate = hasBitrate ? intent.getIntExtra("SONG_BITRATE", 128) : 128;
-
-            // If service started a new song (URL changed) — update UI and position
-            if (url != null && !url.isEmpty()) {
-                // If different song than currently shown, update UI but do NOT call playSong()
-                boolean isDifferent = currentSong == null || url.equals(currentSong.getPreviewUrl()) == false;
-                currentSong = new OnlineSong(title != null ? title : "Unknown",
+            if (trackId != -1) {
+                boolean isDifferent = currentSong == null || trackId != currentSong.getTrackId();
+                currentSong = new OnlineSong(trackId, title != null ? title : "Unknown",
                         artist != null ? artist : "",
                         image != null ? image : "",
-                        url != null ? url : "");
+                        url != null ? url : "", duration);
 
-                // update UI
-                if (title != null) songTitle.setText(title);
-                if (artist != null) artistName.setText(artist);
-                streamInfo.setText(String.format(Locale.getDefault(), "%d kbps", bitrate));
+                if (title != null) {
+                    songTitle.setText(title);
+                    songTitle.setSelected(true);
+                }
+                if (artist != null) {
+                    artistName.setText(artist);
+                    artistName.setSelected(true);
+                }
+                streamInfo.setText("");
                 if (image != null && !image.isEmpty()) {
                     Glide.with(OnlinePlayerActivity.this)
                             .load(image)
@@ -109,37 +105,36 @@ public class OnlinePlayerActivity extends AppCompatActivity {
                     albumArt.setImageResource(R.drawable.ic_album_placeholder);
                 }
 
-                // keep songs list position in-sync if this URL exists in local list
                 if (isDifferent && songs != null && !songs.isEmpty()) {
                     int found = -1;
                     for (int i = 0; i < songs.size(); i++) {
-                        String purl = songs.get(i) != null ? songs.get(i).getPreviewUrl() : null;
-                        if (purl != null && purl.equals(url)) {
+                        if (songs.get(i) != null && songs.get(i).getTrackId() == trackId) {
                             found = i;
                             break;
                         }
                     }
                     if (found >= 0) {
                         position = found;
-                    } else {
-                        // If not found, optionally insert at position 0 so UI still reflects currentSong
-                        // (we keep existing list unchanged to avoid surprises)
                     }
                 }
             } else {
-                // if no url but title/artist provided, update UI accordingly
-                if (title != null) songTitle.setText(title);
-                if (artist != null) artistName.setText(artist);
+                if (title != null) {
+                    songTitle.setText(title);
+                    songTitle.setSelected(true);
+                }
+                if (artist != null) {
+                    artistName.setText(artist);
+                    artistName.setSelected(true);
+                }
                 if (image != null && !image.isEmpty()) {
                     Glide.with(OnlinePlayerActivity.this)
                             .load(image)
                             .placeholder(R.drawable.ic_album_placeholder)
                             .into(albumArt);
                 }
-                streamInfo.setText(String.format(Locale.getDefault(), "%d kbps", bitrate));
+                streamInfo.setText("");
             }
 
-            // Progress updates
             if (intent.hasExtra("CURRENT_POSITION") || intent.hasExtra("DURATION")) {
                 long pos = intent.getIntExtra("CURRENT_POSITION", 0);
                 long dur = intent.getIntExtra("DURATION", 0);
@@ -172,8 +167,8 @@ public class OnlinePlayerActivity extends AppCompatActivity {
 
         Intent in = getIntent();
         if (in != null) {
-            if (in.hasExtra("url")) {
-                OnlineSong s = new OnlineSong(in.getStringExtra("title"), in.getStringExtra("artist"), in.getStringExtra("image"), in.getStringExtra("url"));
+            if (in.hasExtra("trackId")) {
+                OnlineSong s = new OnlineSong(in.getLongExtra("trackId", -1), in.getStringExtra("title"), in.getStringExtra("artist"), in.getStringExtra("image"), in.getStringExtra("url"), in.getLongExtra("duration", 0));
                 songs.clear();
                 songs.add(s);
                 position = 0;
@@ -184,7 +179,6 @@ public class OnlinePlayerActivity extends AppCompatActivity {
                     position = in.getIntExtra("position", 0);
 
                     if (songs != null && !songs.isEmpty()) {
-                        // make sure service plays from this favorites list only
                         playSong(position);
                     }
                 } catch (Exception e) {
@@ -303,9 +297,10 @@ public class OnlinePlayerActivity extends AppCompatActivity {
         songTitle.setText(currentSong.getTitle());
         songTitle.setSelected(true);
         artistName.setText(currentSong.getArtist());
-        streamInfo.setText(String.format(Locale.getDefault(), "%d kbps", currentSong.getBitrate()));
+        artistName.setSelected(true);
+        streamInfo.setText("");
         currentTime.setText("00:00");
-        totalTime.setText("00:00");
+        totalTime.setText(currentSong.getDuration());
         seekBar.setProgress(0);
         bufferingProgress.setVisibility(View.VISIBLE);
 
@@ -320,11 +315,12 @@ public class OnlinePlayerActivity extends AppCompatActivity {
     private void startOnlineServiceWithSong(OnlineSong s) {
         if (s == null) return;
         Intent intent = new Intent(this, OnlineMusicService.class);
+        intent.putExtra("SONG_TRACK_ID", s.getTrackId());
         intent.putExtra("SONG_URL", s.getPreviewUrl());
         intent.putExtra("SONG_TITLE", s.getTitle());
         intent.putExtra("ARTIST_NAME", s.getArtist());
         intent.putExtra("SONG_IMAGE", s.getImageUrl());
-        intent.putExtra("SONG_BITRATE", s.getBitrate());
+        intent.putExtra("SONG_DURATION", s.getDurationMillis());
 
         boolean isFavoritePlay = getIntent().getSerializableExtra("songsList") != null;
         intent.putExtra("IS_FAVORITE_PLAY", isFavoritePlay);
@@ -335,7 +331,7 @@ public class OnlinePlayerActivity extends AppCompatActivity {
 
     private void showTimerOptions() {
         if (sleepTimer != null) {
-            new AlertDialog.Builder(this)
+            new MaterialAlertDialogBuilder(this)
                     .setTitle("Sleep Timer Active")
                     .setMessage("A timer is currently running.")
                     .setPositiveButton("Cancel Timer", (d, w) -> cancelSleepTimer())
@@ -345,7 +341,7 @@ public class OnlinePlayerActivity extends AppCompatActivity {
             final String[] options = {"5 min", "15 min", "30 min", "45 min", "60 min"};
             final int[] minutes = {5, 15, 30, 45, 60};
 
-            new AlertDialog.Builder(this)
+            new MaterialAlertDialogBuilder(this)
                     .setTitle("Set Sleep Timer")
                     .setItems(options, (d, which) -> setSleepTimer(minutes[which]))
                     .show();
@@ -408,16 +404,21 @@ public class OnlinePlayerActivity extends AppCompatActivity {
 
     private void loadLastPlayedSong() {
         SharedPreferences prefs = getSharedPreferences("CURRENT_SONG", MODE_PRIVATE);
+        long trackId = prefs.getLong("trackId", -1);
         String savedTitle = prefs.getString("title", null);
         String savedArtist = prefs.getString("artist", null);
         String savedImage = prefs.getString("image", null);
         String savedUrl = prefs.getString("url", null);
-        int savedBitrate = prefs.getInt("bitrate", 128);
+        long duration = prefs.getLong("duration", 0);
 
-        if (savedUrl != null) {
+        if (trackId != -1) {
+            currentSong = new OnlineSong(trackId, savedTitle, savedArtist, savedImage, savedUrl, duration);
             songTitle.setText(savedTitle != null ? savedTitle : "Unknown");
+            songTitle.setSelected(true);
             artistName.setText(savedArtist != null ? savedArtist : "");
-            streamInfo.setText(String.format(Locale.getDefault(), "%d kbps", savedBitrate));
+            artistName.setSelected(true);
+            streamInfo.setText("");
+            totalTime.setText(currentSong.getDuration());
             if (savedImage != null && !savedImage.isEmpty()) {
                 Glide.with(this).load(savedImage).placeholder(R.drawable.ic_album_placeholder).into(albumArt);
             }
@@ -427,7 +428,6 @@ public class OnlinePlayerActivity extends AppCompatActivity {
     }
 
     private void showPopupMenu(View v) {
-        // Simple popup similar to your old version
         PopupMenu popup = new PopupMenu(this, v);
 
         boolean isFav = FavoritesManager.isFavorite(this, currentSong);
@@ -458,9 +458,9 @@ public class OnlinePlayerActivity extends AppCompatActivity {
                 return true;
             } else if (id == 3) {
                 if (currentSong != null) {
-                    String msg = "Title: " + currentSong.getTitle() + "\nArtist: " + currentSong.getArtist() + "\nURL: " + currentSong.getPreviewUrl() + "\nBitrate: " + currentSong.getBitrate() + "kbps";
+                    String msg = "Title: " + currentSong.getTitle() + "\n\nArtist: " + currentSong.getArtist() + "\n\nDuration: " + currentSong.getDuration();
 
-                    new AlertDialog.Builder(this)
+                    new MaterialAlertDialogBuilder(this)
                             .setTitle("Song Info")
                             .setMessage(msg)
                             .setPositiveButton("OK", null)
@@ -533,15 +533,15 @@ public class OnlinePlayerActivity extends AppCompatActivity {
                 ArrayList<OnlineSong> tempList = new ArrayList<>();
                 for (int i = 0; i < results.length(); i++) {
                     JSONObject obj = results.getJSONObject(i);
-
+                    long trackId = obj.optLong("trackId");
                     String title = obj.optString("trackName", "Unknown");
                     String artist = obj.optString("artistName", "Unknown");
                     String imageUrl = obj.optString("artworkUrl100", "");
-                    String previewUrl = obj.optString("previewUrl", ""); // 30–90 sec legal preview
-                    int bitrate = 128;
+                    String previewUrl = obj.optString("previewUrl", "");
+                    long duration = obj.optLong("trackTimeMillis", 0);
 
                     if (previewUrl != null && !previewUrl.isEmpty()) {
-                        tempList.add(new OnlineSong(title, artist, imageUrl, previewUrl));
+                        tempList.add(new OnlineSong(trackId, title, artist, imageUrl, previewUrl, duration));
                     }
                 }
 
@@ -564,5 +564,4 @@ public class OnlinePlayerActivity extends AppCompatActivity {
             }
         }).start();
     }
-
 }

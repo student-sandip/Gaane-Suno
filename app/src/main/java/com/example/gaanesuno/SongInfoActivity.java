@@ -44,9 +44,6 @@ public class SongInfoActivity extends AppCompatActivity {
         infoDuration = findViewById(R.id.infoDuration);
         infoPath = findViewById(R.id.infoPath);
 
-        // Get Song object
-//        Song song = (Song) getIntent().getSerializableExtra("song");
-
         if (song != null) {
             infoTitle.setText(song.getTitle());
             infoArtist.setText(song.getArtist());
@@ -90,7 +87,7 @@ public class SongInfoActivity extends AppCompatActivity {
             Window window = getWindow();
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(ContextCompat.getColor(this, R.color.orange));
+            window.setStatusBarColor(ContextCompat.getColor(this, R.color.orange_accent));
         }
     }
 

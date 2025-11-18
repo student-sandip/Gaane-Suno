@@ -11,6 +11,8 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -40,6 +42,7 @@ public class OnlineMusicService extends Service {
     private MediaSessionCompat mediaSession;
     private AudioManager audioManager;
 
+    private long currentTrackId = -1;
     private String currentTitle = "";
     private String currentArtist = "";
     private String currentUrl = "";
@@ -58,11 +61,9 @@ public class OnlineMusicService extends Service {
     private final Handler progressHandler = new Handler(Looper.getMainLooper());
     private Runnable progressRunnable;
 
-    // ✅ for Favorites/custom playback
     private List<OnlineSong> currentList = new ArrayList<>();
     private int currentIndex = -1;
 
-    // ✅ for online related songs
     private final List<OnlineSong> currentRelatedList = new ArrayList<>();
     private int currentRelatedIndex = -1;
 
@@ -137,6 +138,12 @@ public class OnlineMusicService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (!isNetworkAvailable()) {
+            Intent networkIntent = new Intent(this, NetworkRequestActivity.class);
+            networkIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(networkIntent);
+            return START_NOT_STICKY;
+        }
         if (intent != null) {
             String action = intent.getAction();
             if (action != null) {
@@ -157,7 +164,6 @@ public class OnlineMusicService extends Service {
                 }
             }
 
-            // ✅ handle favorites/custom list
             if (intent.hasExtra("songsList")) {
                 try {
                     currentList = (ArrayList<OnlineSong>) intent.getSerializableExtra("songsList");
@@ -165,21 +171,23 @@ public class OnlineMusicService extends Service {
                 } catch (Exception e) { e.printStackTrace(); }
             }
 
+            long trackId = intent.getLongExtra("SONG_TRACK_ID", -1);
             String url = intent.getStringExtra("SONG_URL");
             String title = intent.getStringExtra("SONG_TITLE");
             String artist = intent.getStringExtra("ARTIST_NAME");
             String image = intent.getStringExtra("SONG_IMAGE");
 
-            if (url != null && !url.isEmpty()) {
-                if (url.equals(currentUrl) && mediaPlayer != null && mediaPlayer.isPlaying()) {
+            if (trackId != -1) {
+                if (trackId == currentTrackId && mediaPlayer != null && mediaPlayer.isPlaying()) {
                     return START_STICKY;
                 }
 
+                currentTrackId = trackId;
                 currentUrl = url;
                 currentTitle = title != null ? title : "Unknown";
                 currentArtist = artist != null ? artist : "Unknown";
                 currentImage = image != null ? image : "";
-                currentSong = new OnlineSong(currentTitle, currentArtist, currentImage, currentUrl);
+                currentSong = new OnlineSong(currentTrackId, currentTitle, currentArtist, currentImage, currentUrl);
 
                 synchronized (currentRelatedList) {
                     currentRelatedList.clear();
@@ -227,7 +235,6 @@ public class OnlineMusicService extends Service {
         mediaPlayer.setOnCompletionListener(mp -> {
             stopProgressUpdates();
 
-            // ✅ First: play next from favorites/custom list if exists
             if (currentList != null && !currentList.isEmpty()) {
                 if (isRepeat) {
                     playNextSong(currentList.get(currentIndex));
@@ -238,7 +245,6 @@ public class OnlineMusicService extends Service {
                 return;
             }
 
-            // ✅ Otherwise use online related
             synchronized (currentRelatedList) {
                 if (!currentRelatedList.isEmpty()) {
                     if (isShuffle) {
@@ -266,7 +272,6 @@ public class OnlineMusicService extends Service {
         });
     }
 
-    // ✅ Custom next/prev for favorites
     private void playNextFromCurrentList() {
         if (currentList != null && !currentList.isEmpty()) {
             currentIndex = (currentIndex + 1) % currentList.size();
@@ -287,6 +292,7 @@ public class OnlineMusicService extends Service {
 
     private void playNextSong(OnlineSong nextSong) {
         if (nextSong == null) return;
+        currentTrackId = nextSong.getTrackId();
         currentTitle = nextSong.getTitle();
         currentArtist = nextSong.getArtist();
         currentUrl = nextSong.getPreviewUrl();
@@ -311,6 +317,7 @@ public class OnlineMusicService extends Service {
     private void sendSongInfo() {
         if (currentSong == null) return;
         Intent info = new Intent("ONLINE_PLAYER_UPDATE").setPackage(getPackageName());
+        info.putExtra("SONG_TRACK_ID", currentSong.getTrackId());
         info.putExtra("SONG_TITLE", currentSong.getTitle());
         info.putExtra("ARTIST_NAME", currentSong.getArtist());
         info.putExtra("SONG_URL", currentSong.getPreviewUrl());
@@ -390,6 +397,7 @@ public class OnlineMusicService extends Service {
     private void saveCurrentSong() {
         SharedPreferences prefs = getSharedPreferences("CURRENT_SONG", MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
+        editor.putLong("trackId", currentTrackId);
         editor.putString("title", currentTitle);
         editor.putString("artist", currentArtist);
         editor.putString("url", currentUrl);
@@ -439,12 +447,13 @@ public class OnlineMusicService extends Service {
                 List<OnlineSong> filtered = new ArrayList<>();
                 for (int i = 0; i < results.length(); i++) {
                     JSONObject obj = results.getJSONObject(i);
+                    long trackId = obj.optLong("trackId");
                     String title = obj.optString("trackName", "Unknown");
                     String artist = obj.optString("artistName", "Unknown");
                     String image = obj.optString("artworkUrl100", "");
                     String previewUrl = obj.optString("previewUrl", "");
                     if (previewUrl != null && !previewUrl.isEmpty()) {
-                        filtered.add(new OnlineSong(title, artist, image, previewUrl));
+                        filtered.add(new OnlineSong(trackId, title, artist, image, previewUrl));
                     }
                 }
 
@@ -535,6 +544,14 @@ public class OnlineMusicService extends Service {
                 .edit()
                 .putString("last_source", source)
                 .apply();
+    }
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager != null) {
+            NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+            return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+        }
+        return false;
     }
 
 }

@@ -23,20 +23,26 @@ public class OnlineSongAdapter extends RecyclerView.Adapter<OnlineSongAdapter.On
     private final Context context;
     private final List<OnlineSong> songList;
     private final OnSongClickListener listener;
+    private OnSongLongClickListener longClickListener;
 
-    // 🔹 To track highlighted (currently playing) song
     private int highlightedIndex = -1;
 
-    // 🔹 Click listener interface
     public interface OnSongClickListener {
         void onSongClick(OnlineSong song);
     }
 
-    // 🔹 Constructor
+    public interface OnSongLongClickListener {
+        void onSongLongClick(OnlineSong song);
+    }
+
     public OnlineSongAdapter(Context context, List<OnlineSong> songList, OnSongClickListener listener) {
         this.context = context;
         this.songList = songList;
         this.listener = listener;
+    }
+
+    public void setOnSongLongClickListener(OnSongLongClickListener longClickListener) {
+        this.longClickListener = longClickListener;
     }
 
     @NonNull
@@ -56,13 +62,11 @@ public class OnlineSongAdapter extends RecyclerView.Adapter<OnlineSongAdapter.On
         holder.songTitle.setSelected(true);
         holder.songArtist.setSelected(true);
 
-        // 🔹 Load image safely
         Glide.with(context)
                 .load(song.getImageUrl())
                 .placeholder(R.drawable.ic_album_placeholder)
                 .into(holder.songImage);
 
-        // 🔹 Highlight text if current song is playing
         if (position == highlightedIndex) {
             holder.songTitle.setTextColor(Color.parseColor("#FF5722"));
             holder.songArtist.setTextColor(Color.parseColor("#FF5722"));
@@ -75,9 +79,16 @@ public class OnlineSongAdapter extends RecyclerView.Adapter<OnlineSongAdapter.On
             holder.songArtist.setTypeface(null, Typeface.NORMAL);
         }
 
-        // 🔹 On item click
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onSongClick(song);
+        });
+
+        holder.itemView.setOnLongClickListener(v -> {
+            if (longClickListener != null) {
+                longClickListener.onSongLongClick(song);
+                return true;
+            }
+            return false;
         });
     }
 
@@ -86,13 +97,11 @@ public class OnlineSongAdapter extends RecyclerView.Adapter<OnlineSongAdapter.On
         return songList.size();
     }
 
-    // 🔹 To update highlight index instantly
     public void setHighlightedIndex(int index) {
         this.highlightedIndex = index;
         notifyDataSetChanged();
     }
 
-    // 🔹 To update highlight with slight delay (for smoother refresh)
     public void setHighlightedIndexDelayed(int index, long delayMillis) {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             this.highlightedIndex = index;
@@ -100,7 +109,6 @@ public class OnlineSongAdapter extends RecyclerView.Adapter<OnlineSongAdapter.On
         }, delayMillis);
     }
 
-    // 🔹 ViewHolder inner class
     public static class OnlineSongViewHolder extends RecyclerView.ViewHolder {
         ImageView songImage;
         TextView songTitle, songArtist;

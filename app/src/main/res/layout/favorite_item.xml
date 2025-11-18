@@ -40,10 +40,7 @@
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:singleLine="true"
-            android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="10sp"
-            android:autoSizeMaxTextSize="15sp"
-            android:autoSizeStepGranularity="1sp"
+            android:textSize="@dimen/_12sdp"
             android:paddingTop="@dimen/_2sdp"
             android:paddingBottom="@dimen/_1sdp"
             android:freezesText="true" />
@@ -61,10 +58,7 @@
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:singleLine="true"
-            android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="9sp"
-            android:autoSizeMaxTextSize="13sp"
-            android:autoSizeStepGranularity="1sp"
+            android:textSize="@dimen/_10sdp"
             android:paddingBottom="@dimen/_3sdp"
             android:freezesText="true" />
 

@@ -1,7 +1,8 @@
 package com.example.gaanesuno;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
+import android.app.PendingIntent;
+import android.app.RecoverableSecurityException;
 import android.content.*;
 import android.database.ContentObserver;
 import android.media.AudioManager;
@@ -15,20 +16,25 @@ import android.webkit.MimeTypeMap;
 import android.widget.*;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class PlayerActivity extends AppCompatActivity {
 
+    private static final int DELETE_REQUEST_CODE = 103;
+    private ImageButton btnVolumeUp, btnVolumeDown;
     private TextView tvTitle, tvArtist, currentTime, totalTime;
     private SeekBar seekBar, volumeSeekBar;
     private ImageButton btnPlayPause, btnNext, btnPrev, btnShuffle, btnRepeat, btnTimer, btnMore;
@@ -80,10 +86,14 @@ public class PlayerActivity extends AppCompatActivity {
             isBound = true;
             loadPlayerPreferences();
 
-            boolean resumePlayback = getIntent().getBooleanExtra("resumePlayback", false);
-            if (resumePlayback && musicService.isPlaying()) {
+            Song activitySong = songs.get(position);
+            Song serviceSong = musicService.getCurrentSong();
+
+            if (serviceSong != null && serviceSong.equals(activitySong)) {
+                // Service is already managing this song, just sync UI
                 updateUIForCurrentSong();
             } else {
+                // This is a new song or a fresh start
                 playSong();
             }
             updateSeekBar();
@@ -146,6 +156,9 @@ public class PlayerActivity extends AppCompatActivity {
         btnRepeat = findViewById(R.id.btnRepeat);
         btnTimer = findViewById(R.id.btnTimer);
         volumeSeekBar = findViewById(R.id.volumeSeekBar);
+        btnVolumeUp = findViewById(R.id.btnVolumeUp);
+        btnVolumeDown = findViewById(R.id.btnVolumeDown);
+
         btnMore = findViewById(R.id.btnMore);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
     }
@@ -153,18 +166,45 @@ public class PlayerActivity extends AppCompatActivity {
     private void setupAudio() {
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+
         volumeSeekBar.setMax(maxVolume);
-        volumeSeekBar.setProgress(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC));
+        volumeSeekBar.setProgress(currentVolume);
+
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         volumeObserver = new VolumeObserver(new Handler(Looper.getMainLooper()));
         getContentResolver().registerContentObserver(Settings.System.CONTENT_URI, true, volumeObserver);
 
         volumeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar s, int progress, boolean fromUser) {
-                if (fromUser) audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0);
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, AudioManager.FLAG_SHOW_UI);
+                }
             }
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        btnVolumeUp.setOnClickListener(v -> {
+            vibrateShort();
+            int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+            if (vol < maxVolume) {
+                vol++;
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, AudioManager.FLAG_SHOW_UI);
+                volumeSeekBar.setProgress(vol);
+            }
+        });
+
+        btnVolumeDown.setOnClickListener(v -> {
+            vibrateShort();
+            int vol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+            if (vol > 0) {
+                vol--;
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, vol, AudioManager.FLAG_SHOW_UI);
+                volumeSeekBar.setProgress(vol);
+            }
         });
     }
 
@@ -309,32 +349,54 @@ public class PlayerActivity extends AppCompatActivity {
     private void deleteCurrentSong() {
         if (currentSong == null) return;
 
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle("Delete Song")
-                .setMessage("Are you sure you want to delete this song?")
-                .setPositiveButton("Delete", (dialog, which) -> {
-                    if (musicService != null) musicService.stop();
-
-                    File file = new File(currentSong.getPath());
-                    Uri contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI.buildUpon()
-                            .appendPath(String.valueOf(currentSong.getId())).build();
-
-                    if (file.exists() && file.delete()) {
-                        getContentResolver().delete(contentUri, null, null);
-                        sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)));
-
-                        Toast.makeText(this, "Song deleted", Toast.LENGTH_SHORT).show();
-                        Intent resultIntent = new Intent();
-                        resultIntent.putExtra("songDeleted", true);
-                        resultIntent.putExtra("deletedSongPath", currentSong.getPath());
-                        setResult(RESULT_OK, resultIntent);
-                        finish();
-                    } else {
-                        Toast.makeText(this, "Failed to delete. Try enabling All Files Access.", Toast.LENGTH_LONG).show();
-                    }
-                })
+                .setMessage("Are you sure you want to permanently delete this song from your device?")
+                .setPositiveButton("Delete", (dialog, which) -> requestSongDeletion(currentSong))
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void requestSongDeletion(Song song) {
+        List<Uri> urisToDelete = new ArrayList<>();
+        urisToDelete.add(ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.getId()));
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // Android 11+
+            PendingIntent pendingIntent = MediaStore.createDeleteRequest(getContentResolver(), urisToDelete);
+            try {
+                startIntentSenderForResult(pendingIntent.getIntentSender(), DELETE_REQUEST_CODE, null, 0, 0, 0, null);
+            } catch (IntentSender.SendIntentException e) {
+                Toast.makeText(this, "Couldn't perform delete request.", Toast.LENGTH_SHORT).show();
+            }
+        } else { // Android 10 and below
+            try {
+                getContentResolver().delete(urisToDelete.get(0), null, null);
+                handleSuccessfulDeletion(); // Success for pre-Android 10
+            } catch (SecurityException e) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && e instanceof RecoverableSecurityException) {
+                    RecoverableSecurityException rse = (RecoverableSecurityException) e;
+                    try {
+                        startIntentSenderForResult(rse.getUserAction().getActionIntent().getIntentSender(), DELETE_REQUEST_CODE, null, 0, 0, 0, null);
+                    } catch (IntentSender.SendIntentException ex) {
+                        Toast.makeText(this, "Couldn't perform delete request.", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(this, "Couldn't delete file. Permission denied.", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+    }
+
+    private void handleSuccessfulDeletion() {
+        if (musicService != null) {
+            musicService.stop();
+        }
+        Toast.makeText(this, "Song deleted", Toast.LENGTH_SHORT).show();
+
+        Intent resultIntent = new Intent();
+        resultIntent.putExtra("songDeleted", true);
+        setResult(RESULT_OK, resultIntent);
+        finish();
     }
 
 
@@ -360,12 +422,9 @@ public class PlayerActivity extends AppCompatActivity {
     private void playSong() {
         if (songs == null || songs.isEmpty() || musicService == null) return;
         currentSong = songs.get(position);
-        MusicState.currentlyPlayingPosition = position;
-
-        updateUIForCurrentSong();
 
         musicService.playMedia(currentSong);
-        btnPlayPause.setImageResource(R.drawable.ic_pause);
+        updateUIForCurrentSong(); // Update UI after telling service to play
     }
 
     private void updateUIForCurrentSong() {
@@ -373,6 +432,7 @@ public class PlayerActivity extends AppCompatActivity {
         MusicState.currentlyPlayingPosition = position;
 
         tvTitle.setSelected(true);
+        tvArtist.setSelected(true);
         tvTitle.setText(currentSong.getTitle());
         tvArtist.setText(currentSong.getArtist());
 
@@ -420,7 +480,7 @@ public class PlayerActivity extends AppCompatActivity {
     private void showTimerDialog() {
         vibrateShort();
         if (sleepTimer != null) {
-            new AlertDialog.Builder(this)
+            new MaterialAlertDialogBuilder(this)
                 .setTitle("Sleep Timer Active")
                 .setMessage("A timer is currently running.")
                 .setPositiveButton("Cancel Timer", (d, w) -> cancelSleepTimer())
@@ -429,7 +489,7 @@ public class PlayerActivity extends AppCompatActivity {
         } else {
             final String[] options = {"5 minutes", "15 minutes", "30 minutes", "45 minutes", "60 minutes"};
             final int[] minutes = {5, 15, 30, 45, 60};
-            new AlertDialog.Builder(this)
+            new MaterialAlertDialogBuilder(this)
                 .setTitle("Set Sleep Timer")
                 .setItems(options, (d, which) -> setSleepTimer(minutes[which]))
                 .show();
@@ -471,6 +531,18 @@ public class PlayerActivity extends AppCompatActivity {
         if (vibrator != null && vibrator.hasVibrator()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == DELETE_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                handleSuccessfulDeletion();
+            } else {
+                Toast.makeText(this, "Deletion cancelled or failed.", Toast.LENGTH_SHORT).show();
             }
         }
     }

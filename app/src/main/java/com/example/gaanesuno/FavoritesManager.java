@@ -17,9 +17,9 @@ public class FavoritesManager {
         if (song == null) return;
         ArrayList<OnlineSong> favorites = getFavorites(context);
 
-        // avoid duplicates
+        // avoid duplicates using trackId
         for (OnlineSong s : favorites) {
-            if (s.getPreviewUrl().equals(song.getPreviewUrl())) {
+            if (s.getTrackId() == song.getTrackId()) {
                 return;
             }
         }
@@ -28,10 +28,10 @@ public class FavoritesManager {
         saveFavorites(context, favorites);
     }
 
-    public static void removeFavorite(Context context, String songUrl) {
+    public static void removeFavorite(Context context, long trackId) {
         ArrayList<OnlineSong> favorites = getFavorites(context);
         for (int i = 0; i < favorites.size(); i++) {
-            if (favorites.get(i).getPreviewUrl().equals(songUrl)) {
+            if (favorites.get(i).getTrackId() == trackId) {
                 favorites.remove(i);
                 break;
             }
@@ -49,6 +49,7 @@ public class FavoritesManager {
             for (int i = 0; i < array.length(); i++) {
                 JSONObject obj = array.getJSONObject(i);
                 favorites.add(new OnlineSong(
+                        obj.getLong("trackId"),
                         obj.getString("title"),
                         obj.getString("artist"),
                         obj.getString("imageUrl"),
@@ -66,6 +67,7 @@ public class FavoritesManager {
         try {
             for (OnlineSong s : favorites) {
                 JSONObject obj = new JSONObject();
+                obj.put("trackId", s.getTrackId());
                 obj.put("title", s.getTitle());
                 obj.put("artist", s.getArtist());
                 obj.put("imageUrl", s.getImageUrl());
@@ -80,12 +82,11 @@ public class FavoritesManager {
         prefs.edit().putString(KEY_FAVORITES, array.toString()).apply();
     }
 
-    // ✅ এইটা হলো missing method (isFavorite)
     public static boolean isFavorite(Context context, OnlineSong song) {
-        if (song == null || song.getPreviewUrl() == null) return false;
+        if (song == null) return false;
         ArrayList<OnlineSong> favorites = getFavorites(context);
         for (OnlineSong s : favorites) {
-            if (s.getPreviewUrl().equals(song.getPreviewUrl())) {
+            if (s.getTrackId() == song.getTrackId()) {
                 return true;
             }
         }

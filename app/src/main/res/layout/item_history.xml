@@ -5,6 +5,7 @@
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:gravity="center_vertical"
     android:background="?android:attr/selectableItemBackground">
 
     <TextView
@@ -16,10 +17,10 @@
         android:textSize="16sp" />
 
     <ImageButton
-        android:id="@+id/historyGoto"
+        android:id="@+id/arrow_up"
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_up_arrow"
-        app:tint="#FF9800" />
+        app:tint="#B62D04" />
 </LinearLayout>

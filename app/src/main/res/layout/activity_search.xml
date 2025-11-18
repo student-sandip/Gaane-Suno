@@ -22,19 +22,36 @@
             android:src="@drawable/ic_back"
             app:tint="#FFFFFF" />
 
-        <EditText
-            android:id="@+id/etSearch"
+        <!-- Styled Search EditText -->
+        <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="@dimen/_48sdp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="@dimen/_8sdp"
             android:layout_marginEnd="@dimen/_8sdp"
-            android:padding="@dimen/_10sdp"
-            android:hint="Search songs, artists..."
-            android:textColor="#FFFFFF"
-            android:textColorHint="#AAAAAA"
-            android:imeOptions="actionSearch"
-            android:inputType="text" />
+            android:background="@drawable/search_bar_background"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/_10sdp">
+
+            <EditText
+                android:id="@+id/etSearch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
+                android:drawableStart="@drawable/ic_search"
+                android:drawablePadding="@dimen/_12sdp"
+                android:drawableTint="#9E9E9E"
+                android:hint="Search songs, artists..."
+                android:paddingVertical="@dimen/_10sdp"
+                android:singleLine="true"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#9E9E9E"
+                android:textSize="@dimen/_13sdp"
+                android:imeOptions="actionSearch"
+                android:inputType="text"/>
+
+        </LinearLayout>
 
         <ImageButton
             android:id="@+id/btnClear"
@@ -42,7 +59,7 @@
             android:layout_height="@dimen/_40sdp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_delete"
-            app:tint="#FF9800" />
+            app:tint="#DCDAD7" />
     </LinearLayout>
 
     <!-- history list -->

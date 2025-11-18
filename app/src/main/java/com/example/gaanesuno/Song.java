@@ -1,15 +1,18 @@
 package com.example.gaanesuno;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class Song implements Serializable {
-    private String title;
-    private String artist;
-    private String path;
-    private String albumArt;
-    private long duration;
+    private final long id;
+    private final String title;
+    private final String artist;
+    private final String path;
+    private final String albumArt;
+    private final long duration;
 
-    public Song(String title, String artist, String path, String albumArt, long duration) {
+    public Song(long id, String title, String artist, String path, String albumArt, long duration) {
+        this.id = id;
         this.title = title;
         this.artist = artist;
         this.path = path;
@@ -18,12 +21,10 @@ public class Song implements Serializable {
     }
 
     public String getTitle() {
-
         return title;
     }
 
     public String getArtist() {
-
         return artist;
     }
 
@@ -40,10 +41,23 @@ public class Song implements Serializable {
     }
 
     public long getId() {
-        return 0;
+        return id;
     }
 
     public String getAlbumArt() {
         return albumArt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Song song = (Song) o;
+        return id == song.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

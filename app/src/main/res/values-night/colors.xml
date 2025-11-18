@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- List Items: Dark Theme -->
+    <color name="favorite_item_title">#FFFFFF</color>
+    <color name="favorite_item_artist">#B3B3B3</color>
+</resources>

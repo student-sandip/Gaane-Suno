@@ -2,12 +2,15 @@ package com.example.gaanesuno;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
+import android.app.PendingIntent;
+import android.app.RecoverableSecurityException;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
@@ -16,6 +19,7 @@ import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -23,9 +27,11 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,30 +45,43 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_PERMISSION = 1;
+    private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 2;
     private static final int PLAYER_ACTIVITY_REQUEST_CODE = 101;
+    private static final int DELETE_REQUEST_CODE = 102;
 
     private ArrayList<Song> songsList;
+    private ArrayList<Song> originalSongsList;
     private ListView songListView;
     private SongAdapter adapter;
 
     private Toolbar selectionToolbar;
     private TextView tvSelectedCount;
-    private ImageButton btnCloseSelection, btnShareSelection, btnDeleteSelection;
+    private ImageButton btnCloseSelection, btnShareSelection, btnDeleteSelection, btnInfoSelection;
 
-    private Set<Integer> selectedItems = new HashSet<>();
+    private Set<Song> selectedItems = new HashSet<>();
+    private List<Song> songsPendingDeletion;
     private boolean isSelectionMode = false;
+
+    private LinearLayout localSearchBar;
+    private EditText etLocalSearch;
+
+    private Animation slideDownAnim;
+    private Animation slideUpAnim;
+
 
     private final BroadcastReceiver songUpdateReceiver = new BroadcastReceiver() {
         @Override
@@ -86,9 +105,17 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        if (isDesktopOrLaptop()) {
+            showDesktopWarning();
+        }
+
         View rootView = findViewById(R.id.mainLayout);
         Animation loadAnim = AnimationUtils.loadAnimation(this, R.anim.slide_in_up_fade);
         rootView.startAnimation(loadAnim);
+
+        // Load animations
+        slideDownAnim = AnimationUtils.loadAnimation(this, R.anim.no_delay);
+        slideUpAnim = AnimationUtils.loadAnimation(this, R.anim.no_delay);
 
         // Toolbar setup
         selectionToolbar = findViewById(R.id.toolbar);
@@ -97,16 +124,19 @@ public class MainActivity extends AppCompatActivity {
 
         songListView = findViewById(R.id.songListView);
         songsList = new ArrayList<>();
+        originalSongsList = new ArrayList<>();
+
+        // Search bar
+        localSearchBar = findViewById(R.id.localSearchBar);
+        etLocalSearch = findViewById(R.id.etLocalSearch);
 
         // Toolbar buttons
         tvSelectedCount = findViewById(R.id.tvSelectedCount);
         btnCloseSelection = findViewById(R.id.btnCloseSelection);
         btnShareSelection = findViewById(R.id.btnShareSelection);
         btnDeleteSelection = findViewById(R.id.btnDeleteSelection);
+        btnInfoSelection = findViewById(R.id.btnInfoSelection);
 
-        // Remove info & play buttons
-        findViewById(R.id.btnPlaySelection).setVisibility(View.GONE);
-        findViewById(R.id.btnInfoSelection).setVisibility(View.GONE);
 
         btnCloseSelection.setOnClickListener(v -> exitSelectionMode());
 
@@ -117,8 +147,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             ArrayList<Uri> uris = new ArrayList<>();
-            for (int pos : selectedItems) {
-                Song song = songsList.get(pos);
+            for (Song song : selectedItems) {
                 File file = new File(song.getPath());
                 if (file.exists()) {
                     Uri uri = FileProvider.getUriForFile(MainActivity.this,
@@ -147,34 +176,19 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            new AlertDialog.Builder(MainActivity.this)
+            new MaterialAlertDialogBuilder(MainActivity.this)
                     .setTitle("Delete selected song(s)")
-                    .setMessage("Are you sure you want to delete the selected song(s)?")
-                    .setPositiveButton("Delete", (dialog, which) -> {
-                        ArrayList<Song> toRemove = new ArrayList<>();
-                        boolean currentlyPlayingDeleted = false;
-                        for (int pos : selectedItems) {
-                            if (pos == MusicState.currentlyPlayingPosition) {
-                                currentlyPlayingDeleted = true;
-                            }
-                            Song song = songsList.get(pos);
-                            File file = new File(song.getPath());
-                            if (file.exists()) {
-                                file.delete();
-                            }
-                            toRemove.add(song);
-                        }
-                        if (currentlyPlayingDeleted) {
-                            Intent stopIntent = new Intent(MainActivity.this, MusicService.class);
-                            stopService(stopIntent);
-                        }
-                        songsList.removeAll(toRemove);
-                        adapter.notifyDataSetChanged();
-                        Toast.makeText(MainActivity.this, "Deleted successfully", Toast.LENGTH_SHORT).show();
-                        exitSelectionMode();
-                    })
+                    .setMessage("Are you sure you want to permanently delete the selected song(s) from your device?")
+                    .setPositiveButton("Delete", (dialog, which) -> deleteSelectedSongs())
                     .setNegativeButton("Cancel", null)
                     .show();
+        });
+
+        btnInfoSelection.setOnClickListener(v -> {
+            if (selectedItems.size() == 1) {
+                Song selectedSong = selectedItems.iterator().next();
+                showSongInfoDialog(selectedSong);
+            }
         });
 
         songListView.setOnItemClickListener((parent, view, pos, id) -> {
@@ -198,10 +212,10 @@ public class MainActivity extends AppCompatActivity {
         });
 
         ImageButton btnSearch = findViewById(R.id.btnSearch);
-        btnSearch.setOnClickListener(v -> showSearchDialog());
+        btnSearch.setOnClickListener(v -> toggleSearchBar());
 
         if (hasPermission()) {
-            loadSongsInBackground();
+            requestNotificationPermission();
         } else {
             requestPermission();
         }
@@ -227,16 +241,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
-        bottomNav.setOnItemSelectedListener(item -> {
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setSelectedItemId(R.id.nav_offline);
+
+        bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
 
             if (id == R.id.nav_offline) {
-                if (!(this instanceof MainActivity)) {
-                    Intent intent = new Intent(this, MainActivity.class);
-                    startActivity(intent);
-                    finish();
-                }
                 return true;
             } else if (id == R.id.nav_online) {
                 Intent intent = new Intent(MainActivity.this, OnlineActivity.class);
@@ -244,37 +255,190 @@ public class MainActivity extends AppCompatActivity {
                 overridePendingTransition(R.anim.slide_in_up_fade, R.anim.slide_out_down_fade);
                 finish();
                 return true;
-            }  else if (id == R.id.nav_favorite) {
+            } else if (id == R.id.nav_favorite) {
                 Intent favIntent = new Intent(this, FavoritesActivity.class);
                 startActivity(favIntent);
                 overridePendingTransition(R.anim.slide_in_up_fade, R.anim.slide_out_down_fade);
+                finish();
                 return true;
             }
 
             return false;
         });
+
+        setupLocalSearch();
     }
 
-//    @Override
-//    public void onBackPressed() {
-//        if (isSelectionMode) {
-//            exitSelectionMode();
-//        } else {
-//            super.onBackPressed();
-//        }
-//    }
+    private void deleteSelectedSongs() {
+        songsPendingDeletion = new ArrayList<>(selectedItems);
+        List<Uri> urisToDelete = new ArrayList<>();
+        for (Song song : songsPendingDeletion) {
+            urisToDelete.add(ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.getId()));
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // Android 11+
+            PendingIntent pendingIntent = MediaStore.createDeleteRequest(getContentResolver(), urisToDelete);
+            try {
+                startIntentSenderForResult(pendingIntent.getIntentSender(), DELETE_REQUEST_CODE, null, 0, 0, 0, null);
+            } catch (IntentSender.SendIntentException e) {
+                Toast.makeText(this, "Couldn't perform delete request", Toast.LENGTH_SHORT).show();
+            }
+        } else { // Android 10 and below
+            ContentResolver contentResolver = getContentResolver();
+            for (Uri uri : urisToDelete) {
+                try {
+                    contentResolver.delete(uri, null, null);
+                } catch (SecurityException e) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && e instanceof RecoverableSecurityException) {
+                        RecoverableSecurityException rse = (RecoverableSecurityException) e;
+                        PendingIntent pendingIntent = rse.getUserAction().getActionIntent();
+                        try {
+                            startIntentSenderForResult(pendingIntent.getIntentSender(), DELETE_REQUEST_CODE, null, 0, 0, 0, null);
+                            return;
+                        } catch (IntentSender.SendIntentException sendEx) {
+                            Toast.makeText(this, "Couldn't perform delete request", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Toast.makeText(this, "Couldn't delete file. Permission denied.", Toast.LENGTH_SHORT).show();
+                    }
+                    return;
+                }
+            }
+            handleSuccessfulDeletion();
+        }
+    }
+
+    private void handleSuccessfulDeletion() {
+        if (songsPendingDeletion == null) return;
+
+        boolean currentlyPlayingDeleted = false;
+        int currentlyPlayingPosition = MusicState.currentlyPlayingPosition;
+        Song currentlyPlayingSong = null;
+        if (currentlyPlayingPosition != -1 && currentlyPlayingPosition < originalSongsList.size()) {
+            currentlyPlayingSong = originalSongsList.get(currentlyPlayingPosition);
+        }
+
+        for (Song song : songsPendingDeletion) {
+            if (song.equals(currentlyPlayingSong)) {
+                currentlyPlayingDeleted = true;
+                break;
+            }
+        }
+
+        if (currentlyPlayingDeleted) {
+            Intent stopIntent = new Intent(MainActivity.this, MusicService.class);
+            stopService(stopIntent);
+            MusicState.clearState();
+        }
+
+        songsList.removeAll(songsPendingDeletion);
+        originalSongsList.removeAll(songsPendingDeletion);
+
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
+
+        Toast.makeText(MainActivity.this, songsPendingDeletion.size() + " song(s) deleted.", Toast.LENGTH_SHORT).show();
+        exitSelectionMode();
+        songsPendingDeletion.clear();
+    }
+
+    private boolean isDesktopOrLaptop() {
+        PackageManager pm = getPackageManager();
+        boolean isChromeOS = pm.hasSystemFeature("org.chromium.arc");
+        int screenLayout = getResources().getConfiguration().screenLayout & android.content.res.Configuration.SCREENLAYOUT_SIZE_MASK;
+        boolean isLargeScreen = screenLayout >= android.content.res.Configuration.SCREENLAYOUT_SIZE_LARGE;
+        return isChromeOS || isLargeScreen;
+    }
+
+    private void showDesktopWarning() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Desktop Version")
+                .setMessage("Local music playback is only available on mobile & tablet devices. You can play online songs on this device.")
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
-        finishAffinity();
+        if (localSearchBar.getVisibility() == View.VISIBLE) {
+            toggleSearchBar();
+        } else if (isSelectionMode) {
+            exitSelectionMode();
+        } else {
+            super.onBackPressed();
+            finishAffinity();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        IntentFilter filter = new IntentFilter("com.example.gaanesuno.UPDATE_SONG");
+        ContextCompat.registerReceiver(this, songUpdateReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+
+        if (adapter != null) {
+            adapter.setCurrentlyPlayingPosition(MusicState.currentlyPlayingPosition);
+            adapter.notifyDataSetChanged();
+        }
+
+        FloatingActionButton fabNowPlaying = findViewById(R.id.fabNowPlaying);
+        if (MusicState.currentlyPlayingPosition != -1 && MusicState.songList != null && !MusicState.songList.isEmpty()) {
+            fabNowPlaying.show();
+        } else {
+            fabNowPlaying.hide();
+        }
+
+        if (MusicState.currentlyPlayingPosition != -1 && (MusicState.songList == null || MusicState.songList.isEmpty())) {
+            MusicState.songList = new ArrayList<>(originalSongsList);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(songUpdateReceiver);
+    }
+
+    private void openPlayerActivity(int pos) {
+        MusicState.songList = new ArrayList<>(originalSongsList);
+        MusicState.currentlyPlayingPosition = pos;
+
+        Intent intent = new Intent(this, PlayerActivity.class);
+        intent.putExtra("songsList", (Serializable) originalSongsList);
+        intent.putExtra("position", pos);
+        startActivityForResult(intent, PLAYER_ACTIVITY_REQUEST_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PLAYER_ACTIVITY_REQUEST_CODE) {
+            if (adapter != null) {
+                adapter.setCurrentlyPlayingPosition(MusicState.currentlyPlayingPosition);
+                adapter.notifyDataSetChanged();
+            }
+        } else if (requestCode == DELETE_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                handleSuccessfulDeletion();
+            } else {
+                Toast.makeText(this, "Deletion cancelled or failed.", Toast.LENGTH_SHORT).show();
+                exitSelectionMode();
+            }
+        }
     }
 
 
     private void enterSelectionMode() {
         isSelectionMode = true;
         selectedItems.clear();
+        selectionToolbar.startAnimation(slideDownAnim);
         selectionToolbar.setVisibility(View.VISIBLE);
+        if (adapter != null) {
+            adapter.setSelectionMode(true);
+            adapter.notifyDataSetChanged();
+        }
     }
 
     private void exitSelectionMode() {
@@ -282,7 +446,8 @@ public class MainActivity extends AppCompatActivity {
         selectedItems.clear();
 
         if (adapter != null) {
-            adapter.setSelectedItems(selectedItems);
+            adapter.setSelectionMode(false);
+            adapter.setSelectedItems(new HashSet<>());
             adapter.notifyDataSetChanged();
         }
 
@@ -290,23 +455,51 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void toggleSelection(int pos) {
-        if (selectedItems.contains(pos)) {
-            selectedItems.remove(pos);
+        if (pos < 0 || pos >= songsList.size()) return;
+
+        Song song = songsList.get(pos);
+        if (selectedItems.contains(song)) {
+            selectedItems.remove(song);
         } else {
-            selectedItems.add(pos);
+            selectedItems.add(song);
             vibrateShort();
         }
 
-        if (selectedItems.isEmpty()) {
+        if (selectedItems.isEmpty() && isSelectionMode) {
             exitSelectionMode();
         } else {
             tvSelectedCount.setText(selectedItems.size() + " selected");
+            if (selectedItems.size() == 1) {
+                btnInfoSelection.setVisibility(View.VISIBLE);
+            } else {
+                btnInfoSelection.setVisibility(View.GONE);
+            }
         }
 
         if (adapter != null) {
             adapter.setSelectedItems(selectedItems);
             adapter.notifyDataSetChanged();
         }
+    }
+
+    private String formatDuration(long duration) {
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(duration);
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(duration) -
+                TimeUnit.MINUTES.toSeconds(minutes);
+        return String.format("%02d:%02d", minutes, seconds);
+    }
+
+    private void showSongInfoDialog(Song song) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Song Details")
+                .setMessage(
+                        "Title: " + song.getTitle() + "\n\n" +
+                                "Artist: " + song.getArtist() + "\n\n" +
+                                "Duration: " + formatDuration(song.getDuration()) + "\n\n" +
+                                "Path: " + song.getPath()
+                )
+                .setPositiveButton("OK", null)
+                .show();
     }
 
     private void vibrateShort() {
@@ -333,174 +526,195 @@ public class MainActivity extends AppCompatActivity {
     private void requestPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.READ_MEDIA_AUDIO}, REQUEST_PERMISSION);
+                    new String[]{Manifest.permission.READ_MEDIA_AUDIO},
+                    REQUEST_PERMISSION);
         } else {
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_PERMISSION);
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    REQUEST_PERMISSION);
         }
     }
 
-    private void loadSongsInBackground() {
-        new Thread(() -> {
-            ArrayList<Song> loadedSongs = new ArrayList<>();
-            ContentResolver contentResolver = getContentResolver();
-            Uri songUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-
-            Cursor cursor = contentResolver.query(songUri, null,
-                    MediaStore.Audio.Media.IS_MUSIC + "!= 0", null,
-                    MediaStore.Audio.Media.TITLE + " ASC");
-
-            if (cursor != null && cursor.moveToFirst()) {
-                int titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE);
-                int artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
-                int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
-                int albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID);
-                int durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION);
-
-                do {
-                    String title = cursor.getString(titleColumn);
-                    String artist = cursor.getString(artistColumn);
-                    String path = cursor.getString(dataColumn);
-                    long albumId = cursor.getLong(albumIdColumn);
-                    long duration = cursor.getLong(durationColumn);
-                    Uri albumArtUri = Uri.parse("content://media/external/audio/albumart/" + albumId);
-                    loadedSongs.add(new Song(title, artist, path, albumArtUri.toString(), duration));
-                } while (cursor.moveToNext());
-                cursor.close();
-            }
-
-            runOnUiThread(() -> {
-                songsList = loadedSongs;
-                if (songsList.isEmpty()) {
-                    Toast.makeText(MainActivity.this, "No songs found on device", Toast.LENGTH_SHORT).show();
-                } else {
-                    adapter = new SongAdapter(MainActivity.this, songsList);
-                    adapter.setCurrentlyPlayingPosition(MusicState.currentlyPlayingPosition);
-                    adapter.setSelectedItems(selectedItems);
-                    songListView.setAdapter(adapter);
-                }
-            });
-        }).start();
-    }
-
-    private void showSearchDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_search, null);
-        builder.setView(dialogView);
-
-        EditText searchInput = dialogView.findViewById(R.id.searchInput);
-        ListView searchListView = dialogView.findViewById(R.id.searchListView);
-
-        ArrayList<Song> filteredSongs = new ArrayList<>(songsList);
-        SongAdapter searchAdapter = new SongAdapter(this, filteredSongs);
-        searchListView.setAdapter(searchAdapter);
-
-        searchInput.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String query = s.toString().toLowerCase();
-                filteredSongs.clear();
-                for (Song song : songsList) {
-                    if (song.getTitle().toLowerCase().contains(query) || song.getArtist().toLowerCase().contains(query)) {
-                        filteredSongs.add(song);
-                    }
-                }
-                searchAdapter.notifyDataSetChanged();
-            }
-            @Override public void afterTextChanged(Editable s) {}
-        });
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
-
-        searchListView.setOnItemClickListener((parent, view, position, id) -> {
-            Song selectedSong = filteredSongs.get(position);
-            int actualPosition = songsList.indexOf(selectedSong);
-            openPlayerActivity(actualPosition);
-            dialog.dismiss();
-        });
-    }
-
-    private void openPlayerActivity(int position) {
-        Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
-        intent.putExtra("songsList", (Serializable) songsList);
-        intent.putExtra("position", position);
-        intent.putExtra("resumePlayback", false);
-
-        MusicState.songList = songsList;
-        MusicState.currentlyPlayingPosition = position;
-
-        if (adapter != null) {
-            adapter.setCurrentlyPlayingPosition(position);
-            adapter.notifyDataSetChanged();
-        }
-
-        startActivityForResult(intent, PLAYER_ACTIVITY_REQUEST_CODE);
-        overridePendingTransition(R.anim.slide_in_up_fade, R.anim.slide_out_down_fade);
-    }
-
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
-    @Override
-    protected void onResume() {
-        super.onResume();
-        IntentFilter filter = new IntentFilter("com.example.gaanesuno.UPDATE_SONG");
-
+    private void requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(songUpdateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        NOTIFICATION_PERMISSION_REQUEST_CODE);
+            } else {
+                loadSongs();
+            }
         } else {
-            registerReceiver(songUpdateReceiver, filter);
-        }
-
-        if (adapter != null) {
-            adapter.setCurrentlyPlayingPosition(MusicState.currentlyPlayingPosition);
-            adapter.notifyDataSetChanged();
+            loadSongs();
         }
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        try {
-            unregisterReceiver(songUpdateReceiver);
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
         if (requestCode == REQUEST_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show();
-                loadSongsInBackground();
+                requestNotificationPermission();
             } else {
-                Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show();
+                // Permission Denied
+                if (!ActivityCompat.shouldShowRequestPermissionRationale(this, permissions[0])) {
+                    // User has selected "Don't ask again"
+                    new MaterialAlertDialogBuilder(this)
+                            .setTitle("Permission Required")
+                            .setMessage("This app needs permission to access your local music files. Please grant the permission in the app settings.")
+                            .setPositiveButton("Go to Settings", (dialog, which) -> {
+                                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                Uri uri = Uri.fromParts("package", getPackageName(), null);
+                                intent.setData(uri);
+                                startActivity(intent);
+                            })
+                            .setNegativeButton("Cancel", (dialog, which) -> {
+                                Toast.makeText(this, "Permission Denied! App is closing.", Toast.LENGTH_SHORT).show();
+                                finish();
+                            })
+                            .setCancelable(false)
+                            .show();
+                } else {
+                    // User has denied permission, but not permanently
+                    new MaterialAlertDialogBuilder(this)
+                            .setTitle("Permission Required")
+                            .setMessage("This app needs permission to access your local music files to play music.")
+                            .setPositiveButton("Grant", (dialog, which) -> requestPermission())
+                            .setNegativeButton("Deny", (dialog, which) -> {
+                                Toast.makeText(this, "Permission Denied! App is closing.", Toast.LENGTH_SHORT).show();
+                                finish();
+                            })
+                            .setCancelable(false)
+                            .show();
+                }
+            }
+        } else if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, proceed with loading songs
+                loadSongs();
+            } else {
+                // Permission denied, you can show a message or disable notification-related features
+                Toast.makeText(this, "Notification Permission Denied!", Toast.LENGTH_SHORT).show();
+                loadSongs();
             }
         }
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+    @SuppressLint("Range")
+    private void loadSongs() {
+        songsList.clear();
+        originalSongsList.clear();
 
-        if (requestCode == PLAYER_ACTIVITY_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
-            if (data.getBooleanExtra("songDeleted", false)) {
-                String deletedPath = data.getStringExtra("deletedSongPath");
+        ContentResolver contentResolver = getContentResolver();
+        Uri songUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        String selection = MediaStore.Audio.Media.IS_MUSIC + "!= 0";
+        String sortOrder = MediaStore.Audio.Media.DATE_ADDED + " DESC";
+        Cursor cursor = contentResolver.query(songUri, null, selection, null, sortOrder);
 
-                Iterator<Song> iterator = songsList.iterator();
-                while (iterator.hasNext()) {
-                    Song song = iterator.next();
-                    if (song.getPath().equals(deletedPath)) {
-                        iterator.remove();
-                        break;
-                    }
-                }
+        if (cursor != null && cursor.moveToFirst()) {
+            int titleColumn = cursor.getColumnIndex(MediaStore.Audio.Media.TITLE);
+            int artistColumn = cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST);
+            int pathColumn = cursor.getColumnIndex(MediaStore.Audio.Media.DATA);
+            int durationColumn = cursor.getColumnIndex(MediaStore.Audio.Media.DURATION);
+            int albumIdColumn = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID);
+            int idColumn = cursor.getColumnIndex(MediaStore.Audio.Media._ID);
 
-                adapter.notifyDataSetChanged();
-                Toast.makeText(this, "Song list updated", Toast.LENGTH_SHORT).show();
+
+            do {
+                String title = cursor.getString(titleColumn);
+                String artist = cursor.getString(artistColumn);
+                String path = cursor.getString(pathColumn);
+                long duration = cursor.getLong(durationColumn);
+                long albumId = cursor.getLong(albumIdColumn);
+                long id = cursor.getLong(idColumn);
+
+                Uri albumArtUri = ContentUris.withAppendedId(
+                        Uri.parse("content://media/external/audio/albumart"), albumId
+                );
+
+                songsList.add(new Song(id, title, artist, path, albumArtUri.toString(), duration));
+            } while (cursor.moveToNext());
+            cursor.close();
+        } else {
+            if (!isDesktopOrLaptop()) {
+                showNoSongsPopup();
             }
+        }
+
+        originalSongsList.addAll(songsList);
+
+        adapter = new SongAdapter(this, songsList, selectedItems);
+        songListView.setAdapter(adapter);
+    }
+
+    private void showNoSongsPopup() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("No Local Songs Found")
+                .setMessage("It seems you don\'t have any local songs on your device. Try downloading some music to get started.")
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+
+    private void setupLocalSearch() {
+        etLocalSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                filterSongs(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
+    }
+
+    private void filterSongs(String query) {
+        songsList.clear();
+        if (query.isEmpty()) {
+            songsList.addAll(originalSongsList);
+        } else {
+            for (Song song : originalSongsList) {
+                if (song.getTitle().toLowerCase().contains(query.toLowerCase())) {
+                    songsList.add(song);
+                }
+            }
+        }
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+    private void toggleSearchBar() {
+        if (localSearchBar.getVisibility() == View.VISIBLE) {
+            localSearchBar.startAnimation(slideUpAnim);
+            localSearchBar.setVisibility(View.GONE);
+            hideKeyboard();
+        } else {
+            localSearchBar.setVisibility(View.VISIBLE);
+            localSearchBar.startAnimation(slideDownAnim);
+            etLocalSearch.requestFocus();
+            showKeyboard();
+        }
+    }
+
+    private void showKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.showSoftInput(etLocalSearch, InputMethodManager.SHOW_IMPLICIT);
+        }
+    }
+
+    private void hideKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(etLocalSearch.getWindowToken(), 0);
         }
     }
 }

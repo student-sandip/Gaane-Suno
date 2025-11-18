@@ -6,4 +6,10 @@ public class MusicState {
     public static ArrayList<Song> songList = new ArrayList<>();
     public static int currentlyPlayingPosition = -1;
     public static boolean isPlaying;
+
+    public static void clearState() {
+        songList.clear();
+        currentlyPlayingPosition = -1;
+        isPlaying = false;
+    }
 }

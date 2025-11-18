@@ -2,8 +2,14 @@ package com.example.gaanesuno;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.SearchView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,56 +22,72 @@ import java.util.ArrayList;
 public class FavoritesActivity extends AppCompatActivity {
 
     private ListView listView;
-    private ArrayList<OnlineSong> favoritesList;
+    private ArrayList<OnlineSong> originalFavoritesList;
+    private ArrayList<OnlineSong> displayFavoritesList;
     private FavoritesAdapter adapter;
     private int currentPlayingIndex = -1;
+    private SearchView searchView;
+    private TextView noFavoritesText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_favorites);
+        fixSearchHintColor();
 
         listView = findViewById(R.id.favoritesList);
-        favoritesList = FavoritesManager.getFavorites(this);
+        searchView = findViewById(R.id.searchView);
+        noFavoritesText = findViewById(R.id.no_favorites_text);
+        originalFavoritesList = FavoritesManager.getFavorites(this);
+        displayFavoritesList = new ArrayList<>(originalFavoritesList);
 
-        if (favoritesList.isEmpty()) {
-            Toast.makeText(this, "No favorites yet!", Toast.LENGTH_SHORT).show();
+        if (originalFavoritesList.isEmpty()) {
+            listView.setVisibility(View.GONE);
+            noFavoritesText.setVisibility(View.VISIBLE);
+        } else {
+            listView.setVisibility(View.VISIBLE);
+            noFavoritesText.setVisibility(View.GONE);
         }
 
-        // ✅ Setup adapter
-        adapter = new FavoritesAdapter(this, favoritesList, new FavoritesAdapter.OnSongActionListener() {
+        adapter = new FavoritesAdapter(this, displayFavoritesList, new FavoritesAdapter.OnSongActionListener() {
             @Override
             public void onPlay(OnlineSong song) {
-                int pos = favoritesList.indexOf(song);
+                int pos = displayFavoritesList.indexOf(song);
                 if (pos == -1) pos = 0;
 
                 currentPlayingIndex = pos;
                 adapter.setHighlightedIndex(currentPlayingIndex);
 
-                // ✅ Start OnlinePlayerActivity with favorites list
                 Intent intent = new Intent(FavoritesActivity.this, OnlinePlayerActivity.class);
-                intent.putExtra("songsList", (Serializable) favoritesList);
+                intent.putExtra("songsList", (Serializable) displayFavoritesList);
                 intent.putExtra("position", pos);
-                intent.putExtra("IS_FAVORITE_PLAY", true); // 👈 Important flag
+                intent.putExtra("IS_FAVORITE_PLAY", true);
                 startActivity(intent);
                 overridePendingTransition(R.anim.slide_in_up_fade, R.anim.slide_out_down_fade);
             }
 
             @Override
             public void onRemove(OnlineSong song) {
-                favoritesList.remove(song);
+                FavoritesManager.removeFavorite(FavoritesActivity.this, song.getTrackId());
+                originalFavoritesList.remove(song);
+                displayFavoritesList.remove(song);
                 adapter.notifyDataSetChanged();
                 Toast.makeText(FavoritesActivity.this, "Removed from favorites", Toast.LENGTH_SHORT).show();
+                if (originalFavoritesList.isEmpty()) {
+                    listView.setVisibility(View.GONE);
+                    noFavoritesText.setVisibility(View.VISIBLE);
+                }
             }
         });
 
         listView.setAdapter(adapter);
 
-        // ✅ Bottom Navigation setup with nice animation
-        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
-        bottomNav.setSelectedItemId(R.id.nav_favorite);
+        setupSearch();
 
-        bottomNav.setOnItemSelectedListener(item -> {
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setSelectedItemId(R.id.nav_favorite);
+
+        bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_offline) {
                 startActivity(new Intent(FavoritesActivity.this, MainActivity.class));
@@ -78,31 +100,80 @@ public class FavoritesActivity extends AppCompatActivity {
                 finish();
                 return true;
             } else if (id == R.id.nav_favorite) {
-                // Already here
                 return true;
             }
             return false;
         });
     }
 
+    private void setupSearch() {
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                filterFavorites(newText);
+                return true;
+            }
+        });
+    }
+
+    private void filterFavorites(String text) {
+        displayFavoritesList.clear();
+        if (text.isEmpty()) {
+            displayFavoritesList.addAll(originalFavoritesList);
+        } else {
+            text = text.toLowerCase();
+            for (OnlineSong song : originalFavoritesList) {
+                if (song.getTitle().toLowerCase().contains(text)) {
+                    displayFavoritesList.add(song);
+                }
+            }
+        }
+        adapter.notifyDataSetChanged();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
 
-        // ✅ Highlight the currently playing song
         String currentUrl = getSharedPreferences("CURRENT_SONG", MODE_PRIVATE)
                 .getString("url", null);
 
+        currentPlayingIndex = -1;
         if (currentUrl != null) {
-            for (int i = 0; i < favoritesList.size(); i++) {
-                if (favoritesList.get(i).getPreviewUrl().equals(currentUrl)) {
+            for (int i = 0; i < displayFavoritesList.size(); i++) {
+                if (displayFavoritesList.get(i).getPreviewUrl().equals(currentUrl)) {
                     currentPlayingIndex = i;
-                    adapter.setHighlightedIndex(i);
                     break;
                 }
             }
-        } else {
-            adapter.setHighlightedIndex(-1);
+        }
+        adapter.setHighlightedIndex(currentPlayingIndex);
+    }
+
+    private void fixSearchHintColor() {
+        SearchView searchView = findViewById(R.id.searchView);
+
+        int nightModeFlags = getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK;
+
+        if (nightModeFlags == Configuration.UI_MODE_NIGHT_NO) {
+            // Light mode only
+            int hintColor = Color.GRAY;  // or Color.WHITE
+
+            int id = searchView.getContext()
+                    .getResources()
+                    .getIdentifier("android:id/search_src_text", null, null);
+
+            EditText searchEditText = searchView.findViewById(id);
+
+            if (searchEditText != null) {
+                searchEditText.setHintTextColor(hintColor);
+            }
         }
     }
 
@@ -122,7 +193,4 @@ public class FavoritesActivity extends AppCompatActivity {
             finishAffinity();
         }
     }
-
-
-
 }
