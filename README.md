@@ -105,35 +105,26 @@ It offers a **buttery-smooth UI**, **powerful controls**, and **real-time synchr
 
 ---
 
-🎬 Advanced Video Player (New!)
+## 🎬 Advanced Video Player (New!)
 
 GaaneSuno now includes a full‑fledged, gesture-enhanced video player capable of handling high‑quality playback with a modern, interactive experience.
 
-🎥 Video Player Highlights
+## 🎥 Video Player Highlights
 
-Built using ExoPlayer (Media3) for maximum performance
-
-CustomPlayerView with a fully customized control layout
-
-Intelligent gesture system:
-
-Horizontal swipe → Seek control
-
-Vertical swipe (right) → Volume control
-
-Vertical swipe (left) → Brightness control
-
-Smooth gesture indicators with icons & progress bars
-
-Auto-hide controls with polished animations
-
-Instant resume when re-opening the player
-
-Supports full-screen mode and orientation changes
+- Built using ExoPlayer (Media3) for maximum performance
+- CustomPlayerView with a fully customized control layout
+- Intelligent gesture system:
+- Horizontal swipe → Seek control
+- Vertical swipe (right) → Volume control
+- Vertical swipe (left) → Brightness control
+- Smooth gesture indicators with icons & progress bars
+- Auto-hide controls with polished animations
+- Instant resume when re-opening the player
+- Supports full-screen mode and orientation changes
 
 This player is engineered to feel fluid, intuitive, and responsive — giving users a premium viewing experience.
 
-📁 Screenshots
+## 📁 Screenshots
 
 (Coming soon…) Upload your screenshots and they’ll be added here.
 
